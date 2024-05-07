@@ -1,0 +1,20 @@
+#ifndef JUDGECORESERVER_SHARED_ERROR_CODE_H_
+#define JUDGECORESERVER_SHARED_ERROR_CODE_H_
+
+namespace himu::error_code
+{
+	enum ErrorCode
+	{
+		// Common error codes
+		SUCCESS = 0,
+		OUT_OF_MEMORY,
+		RESOURCE_NOT_FOUND,
+		INTERNAL_ERROR,
+		NOT_IMPLEMENTED,
+		// Database error codes
+		DATABASE_CONNECTION_ERROR,
+		DATABASE_INTERNAL_ERROR,
+	};
+}
+
+#endif// JUDGECORESERVER_SHARED_ERROR_CODE_H_

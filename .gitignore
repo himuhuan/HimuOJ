@@ -1,0 +1,11 @@
+.vs/
+.idea/
+node_modules/
+dist/
+out/
+bin/
+CMakeFiles/
+.config/
+wwwroot/
+logs/
+obj/

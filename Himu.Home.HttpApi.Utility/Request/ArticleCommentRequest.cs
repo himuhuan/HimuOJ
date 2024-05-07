@@ -1,0 +1,3 @@
+﻿namespace Himu.HttpApi.Utility
+{
+}

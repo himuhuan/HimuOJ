@@ -1,0 +1,22 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<!--
+https://go.microsoft.com/fwlink/?LinkID=208121.
+-->
+<Project>
+  <PropertyGroup>
+    <TimeStampOfAssociatedLegacyPublishXmlFile />
+    <_PublishTargetUrl>E:\Code\Himu\Himu.Home.HttpApi\bin\Release\net6.0\publish\</_PublishTargetUrl>
+    <History>False|2023-12-13T07:22:35.4899961Z;</History>
+    <LastFailureDetails />
+  </PropertyGroup>
+  <ItemGroup>
+    <DestinationConnectionStrings Include="MysqlConnection">
+      <Value>server=localhost%3buid=root%3bpwd=liuhuan123%3bdatabase=himuoj%3bCharacter Set=utf8%3bpersist security info=True</Value>
+    </DestinationConnectionStrings>
+  </ItemGroup>
+  <ItemGroup>
+    <EFMigrations Include="Himu.EntityFramework.Core.HimuMySqlContext">
+      <Value>server=localhost%3buid=root%3bpwd=liuhuan123%3bdatabase=himuoj%3bCharacter Set=utf8%3bpersist security info=True</Value>
+    </EFMigrations>
+  </ItemGroup>
+</Project>
