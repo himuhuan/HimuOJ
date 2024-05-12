@@ -6,6 +6,9 @@ namespace Himu.EntityFramework.Core.Entity
     {
         public long Id { get; set; }
 
+        //< Migration@2024-05-10: Remove DistributeDateTime and add CreateDate to HimuContest
+        public DateOnly CreateDate { get; set; }
+
         public HimuContestInformation Information { get; set; } = null!;
 
         public long DistributorId { get; set; }
@@ -17,26 +20,9 @@ namespace Himu.EntityFramework.Core.Entity
 
         public ICollection<HimuProblem>? Problems { get; set; }
 
-        // for EFCore
-        // ReSharper disable once UnusedMember.Local
-        private HimuContest()
-        { }
-
-        public HimuContest(string code, string title, string description, string introduction, DateTime distributeTime)
-        {
-            Information = new HimuContestInformation
-            {
-                Code = code,
-                Title = title,
-                Description = description,
-                Introduction = introduction,
-                DistributeDateTime = distributeTime
-            };
-        }
-
-        public HimuContest(string code, string title, string description, string introduction)
-            : this(code, title, description, introduction, DateTime.Now)
-        {
-        }
+        /// <summary>
+        /// Not included the distributor himself
+        /// </summary>
+        public ICollection<HimuHomeUser>? Creators { get; set; }
     }
 }

@@ -16,7 +16,6 @@ namespace Himu.EntityFramework.Core.Configuration
             {
                 info.Property(t => t.LaunchTaskAtOnce).HasDefaultValue(false);
                 info.HasIndex(t => t.Title).HasPrefixLength(50);
-                info.HasIndex(t => t.DistributeDateTime);
                 info.HasIndex(t => t.Code).IsUnique();
                 info.Property(t => t.Code).HasColumnName("ContestCode");
 
@@ -32,6 +31,10 @@ namespace Himu.EntityFramework.Core.Configuration
 
             builder.HasOne(x => x.Distributor)
                    .WithMany(u => u.Contests);
+
+            builder.HasMany(x => x.Creators)
+                .WithMany(u => u.AccessibleContests)
+                .UsingEntity<ContestCreator>();
         }
     }
 }

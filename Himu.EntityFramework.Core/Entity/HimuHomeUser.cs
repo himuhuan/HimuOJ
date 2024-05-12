@@ -27,5 +27,11 @@ namespace Himu.EntityFramework.Core.Entity
         public virtual ICollection<HimuProblem>? Problems { get; set; }
 
         public virtual ICollection<HimuCommit>? MyCommits { get; set; }
+
+        /// <summary>
+        /// Not include the contests that the user created.
+        /// refer to <see cref="ContestCreator"/>
+        /// </summary>
+        public virtual ICollection<HimuContest>? AccessibleContests { get; set; }
     }
 }

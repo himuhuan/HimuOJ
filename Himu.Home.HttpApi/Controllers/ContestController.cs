@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
 using Himu.EntityFramework.Core.Entity.Components;
+using Himu.HttpApi.Utility.Authorization;
 
 namespace Himu.Home.HttpApi.Controllers
 {
@@ -14,133 +15,91 @@ namespace Himu.Home.HttpApi.Controllers
     public class ContestController : ControllerBase
     {
         private readonly HimuMySqlContext _context;
+        private readonly IAuthorizationService _authorizationService;
 
-        public ContestController(HimuMySqlContext context)
+        public ContestController(HimuMySqlContext context, IAuthorizationService authorizationService)
         {
             _context = context;
+            _authorizationService = authorizationService;
         }
 
         [HttpPost("{contestId}/problems")]
         [Authorize]
-        [HimuActionCheck(HimuActionCheckTargets.ContestDistributor)]
         public async Task<ActionResult<HimuApiResponse>>
             PostProblem(long contestId, HimuProblemDetail detail)
         {
-            HimuApiResponse response = new();
-            HimuContest? targetContest = await _context.Contests
-                                                       .Where(c => c.Id == contestId)
-                                                       .Include(c => c.Distributor)
-                                                       .SingleOrDefaultAsync();
-
             long userId = long.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
-
-            // Check if the user has permission to operate the contest.
-            // Now we only check if the user is the distributor of the contest.
-            // TODO: Add different permission levels.
-            if (targetContest == null || targetContest.Distributor.Id != userId)
+            HimuApiResponse response = new();
+            HimuProblem problemToPost = new()
             {
-                return BadRequest(response.Failed($"illegal id: {contestId}"));
-            }
-
-            // Check if the problem is unique in the contest.
-            bool exist = await _context.ProblemSet
-                                       .Where(p =>
-                                           p.ContestId == contestId && p.Detail.Code == detail.Code)
-                                       .AnyAsync();
-            if (exist)
-            {
-                return BadRequest(response.Failed("duplicate problem code", HimuApiResponseCode.DuplicateItem));
-            }
-
-            HimuProblem newProblem = new()
-            {
-                Contest = targetContest,
+                ContestId = contestId,
                 Detail = detail,
                 DistributorId = userId
             };
-            await _context.ProblemSet.AddAsync(newProblem);
-            await _context.SaveChangesAsync();
-            return Ok(response);
-        }
 
-        [HttpGet]
-        public async Task<ActionResult<HimuApiResponse<ICollection<HimuContestInformation>>>>
-            GetAllHimuContests()
-        {
-            HimuApiResponse<ICollection<HimuContestInformation>> response = new()
+            var authorizationResult 
+                = await _authorizationService.AuthorizeAsync(User, problemToPost, HimuCrudOperations.Create);
+            if (!authorizationResult.Succeeded)
             {
-                Value = await _context.Contests
-                                      .Select(c => c.Information)
-                                      .AsNoTracking()
-                                      .ToListAsync()
-            };
+                response.Failed("Authorization failed: Permission denied", HimuApiResponseCode.BadAuthorization);
+                return BadRequest(response);
+            }
+
+            try
+            {
+                await _context.ProblemSet.AddAsync(problemToPost);
+                await _context.SaveChangesAsync();
+            }
+            catch (DbUpdateException e)
+            {
+                response.Failed(e.InnerException!.Message, HimuApiResponseCode.BadRequest);
+                return BadRequest(response);
+            }
 
             return Ok(response);
         }
 
+        /// <summary>
+        /// Post a new contest.
+        /// </summary>
+        /// <param name="information"> Contest information </param>
+        /// <remarks>
+        /// TODO: For ContestDistributor, we should send a notification to the administrator.
+        /// For now, we just approve the distributor to create a contest directly.
+        /// </remarks>
         [HttpPost]
-        [Authorize]
-        public async Task<ActionResult<HimuApiResponse>> CreateHimuContest(
+        [Authorize(Roles = "ContestDistributor, Administrator")]
+        public async Task<ActionResult<HimuApiResponse>> PostHimuContest(
             [FromBody]
             HimuContestInformation information
         )
         {
             HimuApiResponse response = new();
+            long userId = long.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
 
-            if (await _context.Contests.AnyAsync(c => c.Information.Code == information.Code))
+            HimuContest contestToCreate = new()
             {
-                response.Failed($"try to re-test {information.Code}");
+                Information = information,
+                DistributorId = userId,
+                CreateDate = DateOnly.FromDateTime(DateTime.Now)
+            };
+            
+            var authorizationResult
+                = await _authorizationService.AuthorizeAsync(User, contestToCreate, HimuCrudOperations.Create);
+            if (!authorizationResult.Succeeded)
+            {
+                response.Failed("Authorization failed: Permission denied", HimuApiResponseCode.BadAuthorization);
                 return BadRequest(response);
             }
 
-            string distributorId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            var distributor = await _context.Users
-                                            .Where(u => u.Id.ToString() == distributorId)
-                                            .SingleAsync();
-            HimuContest contest = new(information.Code, information.Title, information.Introduction,
-                information.Description)
-            {
-                Distributor = distributor
-            };
-
             try
             {
-                await _context.Contests.AddAsync(contest);
+                await _context.Contests.AddAsync(contestToCreate);
                 await _context.SaveChangesAsync();
-                return Ok(response);
             }
             catch (DbUpdateException e)
             {
-                response.Failed(e.InnerException!.Message);
-                return BadRequest(response);
-            }
-        }
-
-        [HttpDelete("{code}")]
-        [Authorize]
-        public async Task<ActionResult<HimuApiResponse>> DeleteHimuContest(string code)
-        {
-            HimuApiResponse response = new();
-            long userId = long.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
-            HimuContest? contest = await _context.Contests
-                                                 .Where(c => c.Information.Code == code)
-                                                 .Include(c => c.Distributor)
-                                                 .SingleOrDefaultAsync();
-
-            if (contest == null || contest.Distributor.Id != userId)
-            {
-                response.Failed($"Contest {code} not found or you don't have permission.");
-                return BadRequest(response);
-            }
-
-            try
-            {
-                _context.Contests.Remove(contest);
-                await _context.SaveChangesAsync();
-            }
-            catch (DbUpdateConcurrencyException e)
-            {
-                response.Failed($"发生并发冲突: {e.InnerException?.Message}");
+                response.Failed(e.InnerException!.Message, HimuApiResponseCode.BadRequest);
                 return BadRequest(response);
             }
 
@@ -202,33 +161,9 @@ namespace Himu.Home.HttpApi.Controllers
         }
 
         /// <summary>
-        /// Check user has permission to operate the contest.
-        /// </summary>
-        /// TODO: Add different permission levels.
-        [HttpGet("{contestId}/check/permission")]
-        [Authorize]
-        public async Task<ActionResult<HimuApiResponse<bool>>>
-            CheckContestPermission(long contestId, long userId)
-        {
-            HimuApiResponse<bool> response = new();
-            HimuContest? contest = await _context.Contests
-                                                 .Where(c => c.Id == contestId)
-                                                 .SingleOrDefaultAsync();
-            if (contest == null)
-            {
-                response.Failed("not such contest");
-                return BadRequest(response);
-            }
-
-            response.Value = userId == contest.DistributorId;
-            return Ok(response);
-        }
-
-        /// <summary>
         /// Check the problem code is unique in the contest.
         /// </summary>
         [HttpGet("{contestId}/check/problem_code/{problemCode}")]
-        [Authorize]
         public async Task<ActionResult<HimuApiResponse>>
             CheckProblemCode(long contestId, string problemCode)
         {

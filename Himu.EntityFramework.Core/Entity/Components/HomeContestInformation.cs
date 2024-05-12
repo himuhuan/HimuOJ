@@ -14,7 +14,8 @@ namespace Himu.EntityFramework.Core.Entity.Components
 
         public string Introduction { get; set; } = string.Empty;
 
-        public DateTime DistributeDateTime { get; set; } = DateTime.Now;
+        //< Migration@2024-05-10: Remove DistributeDateTime and add CreateDate to HimuContest
+        // public DateTime DistributeDateTime { get; set; } = DateTime.Now;
 
         public bool LaunchTaskAtOnce { get; set; } = false;
     }

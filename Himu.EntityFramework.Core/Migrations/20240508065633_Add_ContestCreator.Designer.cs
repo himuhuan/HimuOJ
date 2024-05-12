@@ -3,6 +3,7 @@ using System;
 using Himu.EntityFramework.Core;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -10,9 +11,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Himu.EntityFramework.Core.Migrations
 {
     [DbContext(typeof(HimuMySqlContext))]
-    partial class HimuMySqlContextModelSnapshot : ModelSnapshot
+    [Migration("20240508065633_Add_ContestCreator")]
+    partial class Add_ContestCreator
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -101,9 +104,6 @@ namespace Himu.EntityFramework.Core.Migrations
                     b.Property<long>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("bigint");
-
-                    b.Property<DateOnly>("CreateDate")
-                        .HasColumnType("date");
 
                     b.Property<long>("DistributorId")
                         .HasColumnType("bigint");
@@ -431,21 +431,17 @@ namespace Himu.EntityFramework.Core.Migrations
 
             modelBuilder.Entity("Himu.EntityFramework.Core.Entity.ContestCreator", b =>
                 {
-                    b.HasOne("Himu.EntityFramework.Core.Entity.HimuContest", "Contest")
+                    b.HasOne("Himu.EntityFramework.Core.Entity.HimuContest", null)
                         .WithMany()
                         .HasForeignKey("ContestId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("Himu.EntityFramework.Core.Entity.HimuHomeUser", "Creator")
+                    b.HasOne("Himu.EntityFramework.Core.Entity.HimuHomeUser", null)
                         .WithMany()
                         .HasForeignKey("CreatorId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-
-                    b.Navigation("Contest");
-
-                    b.Navigation("Creator");
                 });
 
             modelBuilder.Entity("Himu.EntityFramework.Core.Entity.HimuArticle", b =>
@@ -529,6 +525,9 @@ namespace Himu.EntityFramework.Core.Migrations
                                 .HasMaxLength(100000)
                                 .HasColumnType("longtext");
 
+                            b1.Property<DateTime>("DistributeDateTime")
+                                .HasColumnType("datetime(6)");
+
                             b1.Property<string>("Introduction")
                                 .IsRequired()
                                 .HasMaxLength(1024)
@@ -548,6 +547,8 @@ namespace Himu.EntityFramework.Core.Migrations
 
                             b1.HasIndex("Code")
                                 .IsUnique();
+
+                            b1.HasIndex("DistributeDateTime");
 
                             b1.HasIndex("Title")
                                 .HasAnnotation("MySql:IndexPrefixLength", new[] { 50 });

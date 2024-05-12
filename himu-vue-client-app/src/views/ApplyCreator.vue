@@ -1,20 +1,11 @@
 <script setup lang="ts">
 ////////////////////////////// imports //////////////////////////////
 
-import {
-    NAlert,
-    NButton,
-    NCard,
-    NGi,
-    NGrid,
-    NIcon,
-    NText,
-    useLoadingBar,
-    useThemeVars,
-} from "naive-ui";
+import {NAlert, NButton, NCard, NGi, NGrid, NIcon, NText, useLoadingBar, useThemeVars,} from "naive-ui";
 
 import {CheckRound} from "@vicons/material";
-import {AuthorizationServices, UserPermission,} from "@/services/AuthorizationServices";
+import {AuthorizationServices, UserRole,} from "@/services/AuthorizationServices";
+import {UserServices} from "@/services/UserServices.ts";
 import {useUserState} from "@/services/UserStateServices";
 import {onMounted, reactive} from "vue";
 
@@ -33,7 +24,7 @@ function handleApplyButton() {
     loadingBar.start();
     AuthorizationServices.applyPermission(
         user!.id,
-        UserPermission.ProblemPublisher
+        UserRole.ContestDistributor
     ).then((ok) => {
         if (ok) {
             loadingBar.finish();
@@ -47,10 +38,11 @@ function handleApplyButton() {
 /////////////////////////// setup ////////////////////////////
 
 onMounted(async () => {
-    if (await AuthorizationServices.hasProblemPublishPermissionById(user!.id)) {
+    if (await UserServices.hasContestDistributorPermissionById(user!.id)) {
         state.hasPermission = true;
     }
 });
+
 </script>
 
 <template>

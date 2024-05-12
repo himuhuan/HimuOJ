@@ -12,6 +12,7 @@
 
         BadRequest,
         BadAuthentication,
+        BadAuthorization,
         LockedUser,
         ResourceNotExist,
         UpdateConcurrencyConflict,

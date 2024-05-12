@@ -10,18 +10,18 @@ namespace Himu.Home.HttpApi.Controllers
 {
     [Route("api/")]
     [ApiController]
-    public class AuthenticateController : ControllerBase
+    public class UserController : ControllerBase
     {
         private readonly IMailSenderService _mailSender;
         private readonly UserManager<HimuHomeUser> _userManager;
         private readonly IUserJwtManager _userJwtManager;
-        private readonly ILogger<AuthenticateController> _logger;
+        private readonly ILogger<UserController> _logger;
 
-        public AuthenticateController(
+        public UserController(
             IMailSenderService mailSender,
             UserManager<HimuHomeUser> userManager,
             IUserJwtManager userJwtManager,
-            ILogger<AuthenticateController> logger
+            ILogger<UserController> logger
         )
         {
             _mailSender = mailSender;

@@ -7,6 +7,9 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
+using Himu.Common.Service;
+using Microsoft.EntityFrameworkCore.Internal;
+using System.Linq;
 
 namespace Himu.Home.HttpApi.Controllers
 {
@@ -17,17 +20,24 @@ namespace Himu.Home.HttpApi.Controllers
         private readonly HimuMySqlContext _context;
         private readonly UserManager<HimuHomeUser> _userManager;
         private readonly IWebHostEnvironment _environment;
+        private readonly IMailSenderService _mailSender;
+        private readonly IUserJwtManager _userJwtManager;
+        private readonly ILogger<UserController> _logger;
 
         public UserController(
             UserManager<HimuHomeUser> userManager,
             IWebHostEnvironment environment,
             HimuMySqlContext context,
-            AuthorizationController authorizationServices
-        )
+            IUserJwtManager userJwtManager,
+            IMailSenderService mailSender,
+            ILogger<UserController> logger)
         {
             _userManager = userManager;
             _environment = environment;
             _context = context;
+            _userJwtManager = userJwtManager;
+            _mailSender = mailSender;
+            _logger = logger;
         }
 
         [HttpGet("{id}/detail")]
@@ -234,5 +244,207 @@ namespace Himu.Home.HttpApi.Controllers
             response.Value = HimuUserAssetFactory.CreateDefaultBackground(user);
             return response;
         }
+
+        [HttpPost]
+        public async Task<ActionResult<HimuApiResponse>> Register(UserRegisterRequest request)
+        {
+            HimuApiResponse response = new();
+
+            if (await _userManager.FindByEmailAsync(request.Mail) != null
+                || await _userManager.FindByNameAsync(request.UserName) != null)
+
+            {
+                response.Failed($"{request.UserName} or {request.Mail} has already exists!");
+                return BadRequest(response);
+            }
+
+            var user = HimuHomeUserFactory.CreateUserFromRequest(request);
+
+            var result = await _userManager.CreateAsync(user, request.Password);
+            if (!result.Succeeded)
+            {
+                response.Failed($"cannot create user {user.UserName}: {result.Errors}");
+                return BadRequest(response);
+            }
+
+            string verifyToken = await _userManager.GenerateEmailConfirmationTokenAsync(user);
+            _mailSender.Send(user.Email, "Himu 客服酱",
+                MailActivationCodeTemplate.GetTemplate(user.UserName, verifyToken), useHtml: true);
+
+            _logger.LogInformation(
+                "User {userName} : {userId} has been created, and the email has been sent",
+                user.UserName, user.Id);
+            return Ok(response);
+        }
+
+        [HttpPost("confirmation/retry")]
+        public async Task<ActionResult<HimuApiResponse>> ResentEmailConfirmation(
+            ResentEmailConfirmationRequest request
+        )
+        {
+            HimuApiResponse response = new();
+            HimuHomeUser? user = await _userManager.FindByNameAsync(request.UserName);
+            if (user == null || user.EmailConfirmed || user.Email != request.Mail)
+            {
+                response.Failed($"{request.UserName} 与绑定的邮箱不符, 或已被激活");
+                return BadRequest(response);
+            }
+
+            string verifyToken = await _userManager.GenerateEmailConfirmationTokenAsync(user);
+            _mailSender.Send(user.Email, "Himu 客服酱",
+                MailResetPasswordCodeTemplate.GetTemplate(user.UserName, verifyToken),
+                useHtml: true);
+            return Ok(response);
+        }
+
+        [HttpPost("authentication")]
+        public async Task<ActionResult<HimuLoginResponse>> Login(UserLoginRequest request)
+        {
+            HimuLoginResponse response = new();
+
+            HimuHomeUser? user =
+                await _userManager.FindByMethodAsync(request.Method, request.Input);
+
+            if (user == null)
+            {
+                response.Failed("错误的用户名或密码", HimuApiResponseCode.BadAuthentication);
+                return BadRequest(response);
+            }
+
+            if (!user.EmailConfirmed)
+            {
+                response.Failed("用户没有激活", HimuApiResponseCode.BadAuthentication);
+                return Unauthorized(response);
+            }
+
+            if (_userManager.SupportsUserLockout && await _userManager.IsLockedOutAsync(user))
+            {
+                var retryTime =
+                    await _userManager.GetLockoutEndDateAsync(user) - DateTimeOffset.UtcNow;
+                response.Failed(
+                    $"账号已被锁定，请在 {retryTime!.Value.Seconds} 秒重试",
+                    HimuApiResponseCode.LockedUser);
+                return BadRequest(response);
+            }
+
+            if (!await _userManager.CheckPasswordAsync(user, request.Password))
+            {
+                await _userManager.AccessFailedAsync(user);
+                response.Failed("错误的用户名或密码", HimuApiResponseCode.BadAuthentication);
+                return BadRequest(response);
+            }
+
+            await _userManager.ResetAccessFailedCountAsync(user);
+            user.LastLoginDate = DateOnly.FromDateTime(DateTime.Now);
+            await _userManager.UpdateAsync(user);
+            response.GetInfo(user, await _userJwtManager.GetAccessTokenAsync(user));
+
+            _logger.LogDebug(
+                "User {userName}:{userId} logged in at {time}, token: {token}",
+                user.UserName, user.Id, user.LastLoginDate, response.Value.AccessToken);
+
+            return Ok(response);
+        }
+
+        [HttpDelete("authentication")]
+        public async Task<ActionResult<HimuApiResponse>> Logout()
+        {
+            var response = new HimuApiResponse();
+            HimuHomeUser? user
+                = await _userManager.FindByIdAsync(User.FindFirstValue(ClaimTypes.NameIdentifier));
+            if (user == null)
+            {
+                response.Failed("Unexpected error(s) in Logout");
+                return BadRequest(response);
+            }
+
+            await _userJwtManager.InvalidateTokenAsync(user);
+            return Ok(response.Success("The user is logged out"));
+        }
+
+        [HttpPost("authentication/request_reset")]
+        public async Task<ActionResult<HimuApiResponse>> SendResetEmailConfirmation(string email)
+        {
+            HimuApiResponse response = new();
+            HimuHomeUser? user = await _userManager.FindByEmailAsync(email);
+            if (user == null)
+            {
+                response.Failed("Unexpected error(s) in POST authentication/reset");
+                return BadRequest(response);
+            }
+
+            string token = await _userManager.GeneratePasswordResetTokenAsync(user);
+            _mailSender.Send(user.Email, "Himu Offical: Reset Your Password",
+                MailResetPasswordCodeTemplate.GetTemplate(user.UserName, token), useHtml: true);
+            return Ok(response);
+        }
+
+        [HttpPut("authentication/reset")]
+        public async Task<ActionResult<HimuApiResponse>> ResetUserPassword(
+            ResetUserPasswordRequest request
+        )
+        {
+            HimuApiResponse response = new();
+            HimuHomeUser? user = await _userManager.FindByEmailAsync(request.Mail);
+            if (user == null)
+            {
+                response.Failed("Unexpected error(s) in POST authentication/reset");
+                return BadRequest(response);
+            }
+
+            var result =
+                await _userManager.ResetPasswordAsync(user, request.Token, request.NewPassword);
+            if (!result.Succeeded)
+            {
+                response.Failed(result.Errors.First().Description);
+                return BadRequest(response);
+            }
+
+            return Ok(response);
+        }
+
+        /// <summary>
+        /// Get the permissions of a user from roles.
+        /// A user may have multiple roles, and each role has different permissions.
+        /// But we only return the highest permission of the user.
+        /// </summary>        
+        [HttpGet("{userId}/authorization")]
+        public async Task<ActionResult<HimuApiResponse<string>>> GetUserPermission(long userId)
+        {
+            HimuApiResponse<string> response = new();
+            HimuHomeUser? user = await _userManager.FindByIdAsync(userId.ToString());
+            if (user == null)
+            {
+                response.Failed("BadRequest at GetUserPermission");
+                return BadRequest(response);
+            }
+
+            response.Value = HimuHomeRole.GetHighestRole(await _userManager.GetRolesAsync(user));
+            return Ok(response);
+        }
+
+        [HttpGet("{userId}/authorized_contests")]
+        public async Task<ActionResult<AuthorizedContestsListResponse>>
+            GetUserAuthorizedContests(long userId)
+        {
+            AuthorizedContestsListResponse response = new();
+            List<AuthorizedContestsInfo> contestsUserOwned = await _context.Contests
+                .AsNoTracking()
+                .Where(c => c.DistributorId == userId)
+                .Select(c => new AuthorizedContestsInfo(c.Id, c.Information.Title, c.Information.Code))
+                .ToListAsync();
+            List<AuthorizedContestsInfo> authorizedContests = await _context.ContestCreators
+                .AsNoTracking()
+                .Where(cc => cc.CreatorId == userId)
+                .Include(cc => cc.Contest)
+                .Select(cc => new AuthorizedContestsInfo(
+                    cc.ContestId, cc.Contest.Information.Title, cc.Contest.Information.Code))
+                .ToListAsync();
+            authorizedContests.AddRange(contestsUserOwned);
+            
+            response.Success(authorizedContests);
+            return Ok(response);
+        }
+
     }
 }

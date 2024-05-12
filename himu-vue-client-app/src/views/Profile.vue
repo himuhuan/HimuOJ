@@ -10,7 +10,7 @@
 		:value="state.menuItem"
 		:user-info="state.userInfo!"
 	>
-		<transition name="fade" mode="out-in">
+		<transition name="slide-fade" mode="out-in">
 			<component :is="componentToShow" :user-info="state.userInfo!"></component>
 		</transition>
 	</content-with-side-bar>
@@ -32,7 +32,7 @@ import {
 	ref,
 } from "vue";
 import { UserDetailInfo } from "@/models/User";
-import { DefaultUserServicesInstance } from "@/services/UserServices";
+import { UserServices } from "@/services/UserServices.ts";
 import ContentWithSideBar from "@/components/ContentWithSideBar.vue";
 import { useUserState } from "@/services/UserStateServices";
 
@@ -95,7 +95,7 @@ onMounted(async () => {
 	}
 	state.loading = true;
 	await nextTick();
-	DefaultUserServicesInstance.getUserDetailInfo(state.userId).then(
+	UserServices.getUserDetailInfo(state.userId).then(
 		async (res) => {
 			state.userInfo = res;
 			state.loading = false;

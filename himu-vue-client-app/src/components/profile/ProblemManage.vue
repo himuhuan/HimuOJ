@@ -1,7 +1,7 @@
 <script lang="ts" setup>
 ////////////////////////////// imports //////////////////////////////
 import {UserDetailInfo} from "@/models/User";
-import {AuthorizationServices} from "@/services/AuthorizationServices";
+import {UserServices} from "@/services/UserServices.ts";
 import {onMounted, PropType, reactive} from "vue";
 import {NCard, NAlert, NInput, NList, NListItem, NThing, NTag, NSpace, NButton} from "naive-ui";
 
@@ -19,10 +19,11 @@ const state = reactive({
 });
 
 onMounted(() => {
-    state.hasPermissionToPublishProblem = AuthorizationServices.hasProblemPublishPermission(
+    state.hasPermissionToPublishProblem = UserServices.hasContestDistributorPermission(
         props.userInfo.permission
     );
 });
+
 </script>
 
 <template>
@@ -35,7 +36,9 @@ onMounted(() => {
                 <n-input placeholder="搜索问题" />
                 <n-space>
                     <n-button type="primary">搜索</n-button>
-                    <n-button>创建问题</n-button>
+                    <router-link to="creator/problem_guide">
+                        <n-button>创建问题</n-button>
+                    </router-link>
                 </n-space>
             </n-space>
             <n-alert type="info" style="margin: 5px auto" title="问题管理">

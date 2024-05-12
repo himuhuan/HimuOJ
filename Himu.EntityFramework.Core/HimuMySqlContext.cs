@@ -16,6 +16,7 @@ namespace Himu.EntityFramework.Core
         public virtual DbSet<HimuTestPoint> TestPoints { get; set; } = null!;
         public virtual DbSet<TestPointResult> PointResults { get; set; } = null!; 
         public virtual DbSet<PermissionRecord> PermissionRecords { get; set; } = null!;
+        public virtual DbSet<ContestCreator> ContestCreators { get; set; } = null!;
 
         public HimuMySqlContext(DbContextOptions<HimuMySqlContext> options)
             : base(options)

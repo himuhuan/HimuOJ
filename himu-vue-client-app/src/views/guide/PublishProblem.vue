@@ -12,11 +12,15 @@ import {
     NInput,
     NInputNumber,
     NResult,
+    NSelect,
     NSpace,
+    NSpin,
     NStep,
     NSteps,
     NSwitch,
+    NText,
     useLoadingBar,
+    useThemeVars,
 } from "naive-ui";
 import {MdEditor} from "md-editor-v3";
 import 'md-editor-v3/lib/style.css'
@@ -24,34 +28,40 @@ import 'md-editor-v3/lib/style.css'
 // services
 import {ContestsServices} from "@/services/ContestsServices.ts";
 import {useUserState} from "@/services/UserStateServices.ts";
-import router from "@/routers";
+import {UserServices} from "@/services/UserServices.ts";
 import {CodeTemplateInstance} from "@/utils/CodeTemplate.ts";
 import {usedVariables} from "@/utils/HimuTools.ts";
 import {ProblemLimits} from "@/models/ModelLimits.ts";
 import ProblemDetailPreview from "@/components/problems/ProblemDetailPreview.vue";
-import {ProblemDetail} from "@/models/ProblemDetail.ts";
+import ProblemDetail from "@/models/ProblemDetail.ts";
+import {AuthorizedContestsInfo, AuthorizedContestsList} from "@/models/AuthorizedContestsList.ts";
 
 const props = defineProps({
     // The contest code to publish
     contestCode: {
         type: String,
-        required: true,
+        required: false,
+        default: undefined,
     },
 });
 
 const userState = useUserState();
-
+const themeVars = useThemeVars();
 const briefInfoFormRef = ref<FormInst | null>(null);
 const limitFormRef = ref<FormInst | null>(null);
 
 const state = reactive({
+    loading: true,
     contestId: undefined as string | undefined, // The current step
     currentStep: 1,
+    authorizedContests: [] as AuthorizedContestsList,
+    targetContest: null as AuthorizedContestsInfo | null,
     currentStepName: "ProblemIntro", // step 2: title, code, brief info for the problem
     briefInfo: {
         showProblemCodeAlert: false
     },
     detail: {
+        contestCode: undefined as string | undefined,
         title: "",
         code: "",
         content: CodeTemplateInstance.getTemplate("_new_problem"),
@@ -68,42 +78,34 @@ const loadingBar = useLoadingBar();
 
 /////////////////////// functions ////////////////////////
 
-async function doBriefInfoValidation(): Promise<boolean>
-{
+async function doBriefInfoValidation(): Promise<boolean> {
     let res = !!(await briefInfoFormRef.value?.validate());
-    if (!res)
-    {
+    if (!res) {
         state.briefInfo.showProblemCodeAlert = true;
         return false;
     }
 
-    let ok = await ContestsServices.checkProblemCode(state.contestId!, state.detail.code);
+    let ok = await ContestsServices.checkProblemCode(state.targetContest!.contestId, state.detail.code);
     state.briefInfo.showProblemCodeAlert = !ok;
     return ok;
 }
 
-function doDetailValidation(): boolean
-{
+function doDetailValidation(): boolean {
     return state.detail.content.length <= ProblemLimits.MaxContentLength;
 }
 
-async function doProblemLimitValidation(): Promise<boolean>
-{
+async function doProblemLimitValidation(): Promise<boolean> {
     return !!(await limitFormRef.value?.validate());
 }
 
-async function doPublishProblem(): Promise<boolean>
-{
+async function doPublishProblem(): Promise<boolean> {
     state.nextStepLoading = true;
     loadingBar.start();
-    let ok = await ContestsServices.postProblem(state.contestId!, state.detail);
-    if (!ok)
-    {
+    let ok = await ContestsServices.postProblem(state.targetContest!.contestId, state.detail);
+    if (!ok) {
         loadingBar.error();
         window.$message.error("发布失败，请稍后重试");
-    }
-    else
-    {
+    } else {
         loadingBar.finish();
         window.$message.success("发布成功");
     }
@@ -112,14 +114,11 @@ async function doPublishProblem(): Promise<boolean>
     return ok;
 }
 
-async function handleNextStep(e: MouseEvent)
-{
+async function handleNextStep(e: MouseEvent) {
     e.preventDefault();
     let ok = true;
-    if (!state.contestId) return;
 
-    switch (state.currentStep)
-    {
+    switch (state.currentStep) {
     case 2:
         ok = await doBriefInfoValidation();
         break;
@@ -134,13 +133,15 @@ async function handleNextStep(e: MouseEvent)
         break;
     }
 
-    if (ok)
-    {
-        if (state.currentStep <= 5)
-        {
+    if (ok) {
+        if (state.currentStep <= 5) {
             state.currentStep += 1;
         }
     }
+}
+
+function handleSelectContest(value: string, option: any) {
+    state.targetContest = option;
 }
 
 /////////////////////// validation ///////////////////////
@@ -153,20 +154,22 @@ const briefInfoRules: FormRules = {
     },
     code: {
         required: true,
-        validator: (rule, value) =>
-        {
+        validator: (rule, value) => {
             usedVariables(rule);
-            if (value === "")
-            {
+            if (value === "") {
                 return new Error("请输入题目代号");
             }
-            if (value.match(/[^a-z0-9_-]/))
-            {
+            if (value.match(/[^a-z0-9_-]/)) {
                 return new Error("题目代号只能包含小写字母、数字、下划线和短横线");
             }
             return true;
         },
         trigger: 'blur',
+    },
+    contestCode: {
+        required: true,
+        message: "请选择一个测试",
+        trigger: 'blur'
     },
 };
 
@@ -175,8 +178,7 @@ const limitRules: FormRules = {
         type: 'number',
         required: true,
         trigger: ['blur', 'change'],
-        validator: (rule, value: number) =>
-        {
+        validator: (rule, value: number) => {
             usedVariables(rule);
             if (value < 0) return new Error("内存限制必须大于 0");
             if (value >= ProblemLimits.MaxMemoryLimit) return new Error("内存不得高于 1GB");
@@ -187,8 +189,7 @@ const limitRules: FormRules = {
         type: 'number',
         required: true,
         trigger: ['blur', 'change'],
-        validator: (rule, value: number) =>
-        {
+        validator: (rule, value: number) => {
             usedVariables(rule);
             if (value < 0) return new Error("时间限制必须大于 0");
             if (value >= ProblemLimits.MaxTimeMSLimit) return new Error("时间不得高于 10s");
@@ -197,23 +198,23 @@ const limitRules: FormRules = {
     }
 };
 
-onMounted(async () =>
-{
-    if (!props.contestCode
-        || !(state.contestId =
-            await ContestsServices.getContestId(props.contestCode))
-        || !await ContestsServices.checkUserPermission(state.contestId, userState.id))
-    {
-        console.log("Illegal access");
-        window.$message.error("非法访问");
-        await router.push({name: "not-found"});
-    }
-    document.title = "发布题目 - HimuOJ";
+onMounted(async () => {
+    state.loading = true;
+    const userId = userState.id;
+    state.authorizedContests = await UserServices.getAuthorizedContests(userId);
+    state.loading = false;
 });
+
 </script>
 
 <template>
-    <n-card style="min-height: calc(100vh - 50px)">
+    <transition name="fade">
+        <div class="spining-container" v-if="state.loading">
+            <n-spin></n-spin>
+            <n-text> 正在加载必要的数据 ...</n-text>
+        </div>
+    </transition>
+    <n-card style="min-height: calc(100vh - 50px)" v-if="!state.loading">
         <h2 class="creator-header">HimuOJ 问题发布向导</h2>
         <n-steps :current="state.currentStep" size="small">
             <n-step title="发布须知" description="请仔细阅读发布须知"/>
@@ -264,13 +265,26 @@ onMounted(async () =>
             >
                 <h3>标题 & 代号</h3>
                 <n-form
+                    label-width="100px"
                     :rules="briefInfoRules"
                     ref="briefInfoFormRef"
                     :model="state.detail"
                     label-placement="left"
                 >
-                    <n-form-item label="发布到测试">
-                        <n-input :placeholder="props.contestCode" disabled/>
+                    <transition name="slide-fade">
+                        <n-form-item v-if="!state.contestId">
+                            <n-alert type="warning" title="权限限制" style="width: 100%; display: block">
+                                您只能发布题目到您已被授权或者您自己创建的测试中。如果在下拉框中没有您想要发布的测试，
+                                请联系测试的管理员或者网站管理员。
+                            </n-alert>
+                        </n-form-item>
+                    </transition>
+                    <n-form-item label="发布到测试" path="contestCode">
+                        <n-select :options="state.authorizedContests"
+                                  label-field="contestTitle"
+                                  value-field="contestCode"
+                                  @update:value="handleSelectContest"
+                                  v-model:value="state.detail.contestCode" placeholder="选择一个测试"/>
                     </n-form-item>
                     <n-form-item label="题目标题" path="title">
                         <n-input
@@ -290,7 +304,7 @@ onMounted(async () =>
                                      style="width: 100%">
                                 您的题目将在
                                 <u> /{{
-                                        props.contestCode
+                                        state.targetContest!.contestCode
                                     }}/{{ state.detail.code }} </u>
                                 发布。在下一步开始之前我们将会检查您的代号是否合法。
                             </n-alert>
@@ -367,5 +381,20 @@ onMounted(async () =>
     margin-top: 5px;
     margin-bottom: 5px;
     font-weight: 300;
+}
+
+.spining-container {
+    width: 100%;
+    height: 100%;
+    opacity: 0.9;
+    background: v-bind("themeVars.bodyColor");
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 100;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
 }
 </style>

@@ -3,6 +3,7 @@ import {AxiosDefaultBaseUrl, AxiosDefaultInstance} from "./AxiosInstance";
 import {HimuApiResult, HimuApiResultWithData} from "@/models/HimuApiResult";
 import router from "@/routers";
 import {UserRole} from "@/services/AuthorizationServices.ts";
+import {AuthorizedContestsList} from "@/models/AuthorizedContestsList.ts";
 
 export class UserServicesImpl {
     async getUserBriefInfo(userId: string): Promise<UserBriefInfo> {
@@ -101,6 +102,17 @@ export class UserServicesImpl {
             permission === UserRole.Administrator ||
             permission === UserRole.ContestDistributor
         );
+    }
+
+    async getAuthorizedContests(userId: string): Promise<AuthorizedContestsList> {
+        const resp = await AxiosDefaultInstance.get<HimuApiResultWithData>(
+            `users/${userId}/authorized_contests`
+        );
+        if (resp.status === 200) {
+            return resp.data.value as AuthorizedContestsList;
+        } else {
+            throw new Error("Failed to get user permission");
+        }
     }
 }
 

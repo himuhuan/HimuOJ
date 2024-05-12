@@ -1,6 +1,6 @@
 // Used to store user information after login
 import { AxiosDefaultBaseUrl } from "@/services/AxiosInstance";
-import { UserPermission } from "@/services/AuthorizationServices";
+import { UserRole } from "@/services/AuthorizationServices";
 
 export interface UserBriefInfo {
 	userName: string;
@@ -19,7 +19,7 @@ export interface UserDetailInfo {
 	totalCommits: number;
 	problemSolved: number;
 	commitAccepted: number;
-	permission: UserPermission;
+	permission: UserRole;
 }
 
 export interface UserLoginInfo {

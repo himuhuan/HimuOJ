@@ -151,7 +151,7 @@ import {
 } from "naive-ui";
 import { StaticFileServicesInstance } from "@/services/StaticFileServices.ts";
 import { UserBriefInfo } from "@/models/User.ts";
-import { DefaultUserServicesInstance } from "@/services/UserServices.ts";
+import { UserServices } from "@/services/UserServices.ts";
 import { ProblemsServices } from "@/services/ProblemsServices.ts";
 import { useThemeVars } from "naive-ui";
 import StatusTag from "../StatusTag.vue";
@@ -175,7 +175,7 @@ onMounted(async () => {
 	sourceCode.value = await StaticFileServicesInstance.getRawTextContent(
 		props.commitDetail?.sourceUri
 	);
-	userBrief.value = await DefaultUserServicesInstance.getUserBriefInfo(
+	userBrief.value = await UserServices.getUserBriefInfo(
 		props.commitDetail?.userId.toString()
 	);
 	problemDetail.value = await ProblemsServices.getProblemDetailById(

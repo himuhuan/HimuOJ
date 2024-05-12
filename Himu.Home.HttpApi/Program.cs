@@ -4,7 +4,9 @@ using Himu.Common.Service;
 using Himu.EntityFramework.Core;
 using Himu.EntityFramework.Core.Entity;
 using Himu.HttpApi.Utility;
+using Himu.HttpApi.Utility.Authorization;
 using Himu.HttpApi.Utility.Utility;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -56,7 +58,6 @@ try
     builder.Services.Configure<MvcOptions>(options =>
     {
         options.Filters.Add<RecordBadApiResponseFilter>();
-        options.Filters.Add<HimuActionCheckFilter>();
     });
 
     #endregion
@@ -117,6 +118,9 @@ try
         options.Filters.Add<AccessTokenCheckFilter>();
     });
 
+    builder.Services.AddSingleton<IAuthorizationHandler, HimuContestAuthorizationCrudHandler>();
+    // Problem authorization handler used EFCore.
+    builder.Services.AddScoped<IAuthorizationHandler, HimuProblemAuthorizationCrudHandler>();
     #endregion
 
     #region Email Service

@@ -8,6 +8,10 @@
 	</PropertyGroup>
 
 	<ItemGroup>
+	  <Compile Remove="Controllers\UserController_1.cs" />
+	</ItemGroup>
+
+	<ItemGroup>
 		<PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="6.0.21" />
 		<PackageReference Include="Microsoft.EntityFrameworkCore.Relational" Version="7.0.12" />
 		<PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="6.0.23" />
