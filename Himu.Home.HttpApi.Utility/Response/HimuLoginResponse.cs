@@ -17,6 +17,10 @@ namespace Himu.HttpApi.Utility
         public string AvatarUri { get; set; } = string.Empty;
 
         public string BackgroundUri { get; set; } = string.Empty;
+
+        public DateOnly LastLoginDate { get; set; } = DateOnly.MinValue;
+
+        public DateOnly RegisterDate { get; set; } = DateOnly.MinValue;
     }
 
     public class HimuLoginResponse : HimuApiResponse<HimuLoginResponseValue>
@@ -35,6 +39,8 @@ namespace Himu.HttpApi.Utility
             Value.PhoneNumber = user.PhoneNumber;
             Value.AvatarUri = user.Avatar;
             Value.BackgroundUri = user.Background;
+            Value.LastLoginDate = user.LastLoginDate;
+            Value.RegisterDate = user.RegisterDate;
         }
     }
 }

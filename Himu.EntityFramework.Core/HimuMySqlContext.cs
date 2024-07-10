@@ -1,8 +1,10 @@
 ﻿using Himu.EntityFramework.Core.Entity;
 using Himu.EntityFramework.Core.Entity.Components;
+using Himu.EntityFramework.Core.Entity.Results;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Design;
+using MySqlConnector;
 
 namespace Himu.EntityFramework.Core
 {
@@ -17,6 +19,12 @@ namespace Himu.EntityFramework.Core
         public virtual DbSet<TestPointResult> PointResults { get; set; } = null!; 
         public virtual DbSet<PermissionRecord> PermissionRecords { get; set; } = null!;
         public virtual DbSet<ContestCreator> ContestCreators { get; set; } = null!;
+        public virtual DbSet<ChatMessage> ChatMessages { get; set; }
+        public virtual DbSet<UserChatSession> UserChatSessions { get; set; }
+        public virtual DbSet<UserFriend> UserFriends { get; set; } = null!;
+
+        public virtual DbSet<ProblemAccuracy> ProblemAccuracies { get; set; }
+        public virtual DbSet<UserSuccessRateResult> UserSuccessRates { get; set; }
 
         public HimuMySqlContext(DbContextOptions<HimuMySqlContext> options)
             : base(options)
@@ -27,6 +35,16 @@ namespace Himu.EntityFramework.Core
         {
             base.OnModelCreating(builder);
             builder.ApplyConfigurationsFromAssembly(this.GetType().Assembly);
+        }
+
+        public IQueryable<ProblemAccuracy> CalculateProblemAccuracy()
+        {
+            return ProblemAccuracies.FromSqlRaw("CALL CalculateProblemAccuracy()");
+        }
+
+        public IQueryable<UserSuccessRateResult> CalculateUserSuccessRate(long userId)
+        {
+            return UserSuccessRates.FromSqlRaw($"CALL CalculateUserSuccessRate({userId})");
         }
     }
 

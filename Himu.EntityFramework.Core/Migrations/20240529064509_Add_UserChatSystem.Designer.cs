@@ -3,6 +3,7 @@ using System;
 using Himu.EntityFramework.Core;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -10,9 +11,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Himu.EntityFramework.Core.Migrations
 {
     [DbContext(typeof(HimuMySqlContext))]
-    partial class HimuMySqlContextModelSnapshot : ModelSnapshot
+    [Migration("20240529064509_Add_UserChatSystem")]
+    partial class Add_UserChatSystem
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -265,12 +268,6 @@ namespace Himu.EntityFramework.Core.Migrations
                         .HasColumnType("bigint");
 
                     b.Property<long>("DistributorId")
-                        .HasColumnType("bigint");
-
-                    b.Property<long>("ProblemAcceptedCount")
-                        .HasColumnType("bigint");
-
-                    b.Property<long>("ProblemCommitCount")
                         .HasColumnType("bigint");
 
                     b.HasKey("Id");

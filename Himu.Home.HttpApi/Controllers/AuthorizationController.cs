@@ -8,11 +8,10 @@ using Himu.EntityFramework.Core.Entity.Components;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Authorization.Infrastructure;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Build.Evaluation;
 
 namespace Himu.Home.HttpApi.Controllers
 {
-    [Route("api/authorization")]
+    [Route("api/user/authorization")]
     [ApiController]
     public class AuthorizationController : ControllerBase
     {

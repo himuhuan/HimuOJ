@@ -182,11 +182,11 @@ namespace Himu.Home.HttpApi.Controllers
                 commit.SourceUri);
 
             // Launch judge task if not in development environment
-            if (!_environment.IsDevelopment() && problem.Contest.Information.LaunchTaskAtOnce)
-            {
-                _logger.LogDebug("launch judge task for commit {commitId}", commitId);
-                await _judgeController.JudgeCommit(commitId);
-            }
+            if (!problem.Contest.Information.LaunchTaskAtOnce)
+                return Ok(response);
+            
+            _logger.LogDebug("launch judge task for commit {commitId}", commitId);
+            await _judgeController.JudgeCommit(commitId);
 
             return Ok(response);
         }

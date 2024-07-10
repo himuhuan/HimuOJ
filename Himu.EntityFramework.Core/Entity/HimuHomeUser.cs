@@ -33,5 +33,9 @@ namespace Himu.EntityFramework.Core.Entity
         /// refer to <see cref="ContestCreator"/>
         /// </summary>
         public virtual ICollection<HimuContest>? AccessibleContests { get; set; }
+
+        public virtual ICollection<UserFriend>? Friends { get; set; }
+
+        public virtual ICollection<UserChatSession>? Sessions { get; set; }
     }
 }

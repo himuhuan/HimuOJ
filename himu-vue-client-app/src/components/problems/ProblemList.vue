@@ -51,7 +51,7 @@ const tableColumns: DataTableColumn[] = [
         title: "通过数"
     },
     {
-        key: "acceptedRate",
+        key: "accuracyRate",
         title: "通过率"
     }
 ];

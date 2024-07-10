@@ -14,6 +14,12 @@ namespace Himu.EntityFramework.Core.Entity
 
         public HimuProblemDetail Detail { get; set; } = null!;
 
+        // Set via trigger
+        public long ProblemCommitCount { get; set; }
+
+        // Set via trigger
+        public long ProblemAcceptedCount { get; set; }
+
         public long ContestId { get; set; }
 
         [JsonIgnore]

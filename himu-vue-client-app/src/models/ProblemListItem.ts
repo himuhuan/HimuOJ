@@ -14,6 +14,5 @@ export default interface ProblemListItem
 
     totalCommitCount: number;
 
-    // only showed in client side
-    acceptedRate: string;
+    accuracyRate: number
 }

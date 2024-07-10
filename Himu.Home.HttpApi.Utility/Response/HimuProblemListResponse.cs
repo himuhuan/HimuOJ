@@ -15,6 +15,8 @@
         public long AcceptedCount { get; set; } = 0;
 
         public long TotalCommitCount { get; set; } = 0;
+
+        public double AccuracyRate { get; set; } = 0;
     }
 
     public class HimuProblemListResponseValue

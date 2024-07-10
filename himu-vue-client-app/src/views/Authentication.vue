@@ -5,7 +5,7 @@
 	>
 		<n-card>
 			<n-space justify="center" align="center">
-				<img src="@/assets/images/himu-logo.svg" width="64" height="64" />
+				<img src="@/assets/images/himu-logo.svg" width="64" height="64" alt="" />
 				<div class="italic-font" style="font-size: 16px">Himu Online Judge</div>
 			</n-space>
 			<n-card :bordered="false">
@@ -144,6 +144,7 @@ import { MailOutline } from "@vicons/ionicons5";
 import router from "@/routers";
 import { useUserState } from "@/services/UserStateServices";
 import { AuthServices } from "@/services/AuthServices";
+import {usedVariables} from "@/utils/HimuTools.ts";
 
 const themeVars = useThemeVars().value;
 
@@ -200,6 +201,7 @@ const rules: FormRules = {
 		repeatedPassword: {
 			required: true,
 			validator: (rule: FormItemRule, value: string) => {
+                usedVariables(rule);
 				if (!value) return new Error("请重复输入密码");
 				else if (value != formState.value.register.password) {
 					return new Error("两次输入的密码不一致");
@@ -237,7 +239,7 @@ const loginButtonClick = async () => {
 		});
 	if (res) {
 		loadingBar.finish();
-		router.push({ name: "self-profile"});
+		await router.push({name: "self-profile"});
 	} else {
 		loadingBar.error();
 	}

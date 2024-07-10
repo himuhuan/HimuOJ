@@ -74,7 +74,7 @@ const CommitsComponent = defineAsyncComponent(() => {
 });
 
 const CreatorDashboardComponent = defineAsyncComponent(() => {
-	return import("@/components/profile/ProblemManage.vue");
+	return import("@/components/profile/CreatorCenter.vue");
 });
 
 const currentComponent = ref("info");

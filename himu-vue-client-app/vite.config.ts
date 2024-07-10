@@ -10,6 +10,9 @@ export default defineConfig({
 			"#": resolve(__dirname, "src/components"),
 		},
 	},
+	server: {
+		host: "0.0.0.0"
+	},
 	optimizeDeps: {
 		include: [
 			`monaco-editor/esm/vs/language/json/json.worker`,

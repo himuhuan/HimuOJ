@@ -3,6 +3,7 @@ using System;
 using Himu.EntityFramework.Core;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -10,46 +11,16 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Himu.EntityFramework.Core.Migrations
 {
     [DbContext(typeof(HimuMySqlContext))]
-    partial class HimuMySqlContextModelSnapshot : ModelSnapshot
+    [Migration("20240529024336_Add_UserFriend")]
+    partial class Add_UserFriend
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
                 .HasAnnotation("ProductVersion", "7.0.12")
                 .HasAnnotation("Relational:MaxIdentifierLength", 64);
-
-            modelBuilder.Entity("Himu.EntityFramework.Core.Entity.ChatMessage", b =>
-                {
-                    b.Property<long>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("bigint");
-
-                    b.Property<DateTime>("SendTime")
-                        .HasColumnType("datetime(6)");
-
-                    b.Property<long>("SenderId")
-                        .HasColumnType("bigint");
-
-                    b.Property<Guid>("SessionId")
-                        .HasColumnType("char(36)");
-
-                    b.Property<int>("Type")
-                        .HasColumnType("int");
-
-                    b.Property<string>("Value")
-                        .IsRequired()
-                        .HasMaxLength(3000)
-                        .HasColumnType("varchar(3000)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("SenderId");
-
-                    b.HasIndex("SessionId");
-
-                    b.ToTable("ChatMessages");
-                });
 
             modelBuilder.Entity("Himu.EntityFramework.Core.Entity.ContestCreator", b =>
                 {
@@ -267,12 +238,6 @@ namespace Himu.EntityFramework.Core.Migrations
                     b.Property<long>("DistributorId")
                         .HasColumnType("bigint");
 
-                    b.Property<long>("ProblemAcceptedCount")
-                        .HasColumnType("bigint");
-
-                    b.Property<long>("ProblemCommitCount")
-                        .HasColumnType("bigint");
-
                     b.HasKey("Id");
 
                     b.HasIndex("ContestId");
@@ -368,27 +333,6 @@ namespace Himu.EntityFramework.Core.Migrations
                     b.ToTable("PointResults");
                 });
 
-            modelBuilder.Entity("Himu.EntityFramework.Core.Entity.UserChatSession", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("char(36)");
-
-                    b.Property<long>("FriendId")
-                        .HasColumnType("bigint");
-
-                    b.Property<long>("UserId")
-                        .HasColumnType("bigint");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("FriendId");
-
-                    b.HasIndex("UserId");
-
-                    b.ToTable("UserChatSessions", (string)null);
-                });
-
             modelBuilder.Entity("Himu.EntityFramework.Core.Entity.UserFriend", b =>
                 {
                     b.Property<long>("UserId")
@@ -401,7 +345,7 @@ namespace Himu.EntityFramework.Core.Migrations
 
                     b.HasIndex("FriendId");
 
-                    b.ToTable("UserFriends");
+                    b.ToTable("UserFriend");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<long>", b =>
@@ -501,25 +445,6 @@ namespace Himu.EntityFramework.Core.Migrations
                     b.HasKey("UserId", "LoginProvider", "Name");
 
                     b.ToTable("AspNetUserTokens", (string)null);
-                });
-
-            modelBuilder.Entity("Himu.EntityFramework.Core.Entity.ChatMessage", b =>
-                {
-                    b.HasOne("Himu.EntityFramework.Core.Entity.HimuHomeUser", "Sender")
-                        .WithMany()
-                        .HasForeignKey("SenderId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("Himu.EntityFramework.Core.Entity.UserChatSession", "Session")
-                        .WithMany("Messages")
-                        .HasForeignKey("SessionId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Sender");
-
-                    b.Navigation("Session");
                 });
 
             modelBuilder.Entity("Himu.EntityFramework.Core.Entity.ContestCreator", b =>
@@ -842,25 +767,6 @@ namespace Himu.EntityFramework.Core.Migrations
                     b.Navigation("Usage");
                 });
 
-            modelBuilder.Entity("Himu.EntityFramework.Core.Entity.UserChatSession", b =>
-                {
-                    b.HasOne("Himu.EntityFramework.Core.Entity.HimuHomeUser", "Friend")
-                        .WithMany()
-                        .HasForeignKey("FriendId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("Himu.EntityFramework.Core.Entity.HimuHomeUser", "User")
-                        .WithMany("Sessions")
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("Friend");
-
-                    b.Navigation("User");
-                });
-
             modelBuilder.Entity("Himu.EntityFramework.Core.Entity.UserFriend", b =>
                 {
                     b.HasOne("Himu.EntityFramework.Core.Entity.HimuHomeUser", "Friend")
@@ -952,8 +858,6 @@ namespace Himu.EntityFramework.Core.Migrations
                     b.Navigation("MyCommits");
 
                     b.Navigation("Problems");
-
-                    b.Navigation("Sessions");
                 });
 
             modelBuilder.Entity("Himu.EntityFramework.Core.Entity.HimuProblem", b =>
@@ -961,11 +865,6 @@ namespace Himu.EntityFramework.Core.Migrations
                     b.Navigation("TestPoints");
 
                     b.Navigation("UserCommits");
-                });
-
-            modelBuilder.Entity("Himu.EntityFramework.Core.Entity.UserChatSession", b =>
-                {
-                    b.Navigation("Messages");
                 });
 #pragma warning restore 612, 618
         }

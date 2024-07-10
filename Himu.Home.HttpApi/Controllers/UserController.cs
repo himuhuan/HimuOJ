@@ -10,6 +10,7 @@ using System.Security.Claims;
 using Himu.Common.Service;
 using Microsoft.EntityFrameworkCore.Internal;
 using System.Linq;
+using System.Security.Cryptography.X509Certificates;
 
 namespace Himu.Home.HttpApi.Controllers
 {
@@ -55,24 +56,10 @@ namespace Himu.Home.HttpApi.Controllers
                 return BadRequest(response);
             }
 
-            var userExtraData = await
-                _context.UserCommits
-                        .AsNoTracking()
-                        .Where(c => c.UserId == id)
-                        .GroupBy(c => c.UserId)
-                        .Select(g => new
-                        {
-                            CommitTotalCount = g.Count(),
-                            AcceptedProblemCount = g
-                                                   .Where(c =>
-                                                       c.Status == ExecutionStatus.ACCEPTED)
-                                                   .Select(c => c.ProblemId)
-                                                   .Distinct()
-                                                   .Count(),
-                            AcceptedCommitCount = g.Count(c =>
-                                c.Status == ExecutionStatus.ACCEPTED)
-                        })
-                        .SingleOrDefaultAsync();
+            var userExtraData = await _context.CalculateUserSuccessRate(id)
+                .AsNoTracking()
+                .ToListAsync();
+
 
             var userPermission =
                 HimuHomeRole.GetHighestRole(await _userManager.GetRolesAsync(user));
@@ -87,10 +74,10 @@ namespace Himu.Home.HttpApi.Controllers
             response.Value.BackgroundUri = user.Background;
             response.Value.RegisterDate = user.RegisterDate;
             response.Value.LastLoginDate = user.LastLoginDate;
-            response.Value.TotalCommits = userExtraData?.CommitTotalCount ?? 0;
-            response.Value.ProblemSolved = userExtraData?.AcceptedProblemCount ?? 0;
-            response.Value.CommitAccepted = userExtraData?.AcceptedCommitCount ?? 0;
-            response.Value.Permission = userPermission ?? HimuHomeRole.StandardUser;
+            response.Value.TotalCommits = userExtraData[0].TotalSubmits;
+            response.Value.ProblemSolved = userExtraData[0].ProblemSolved;
+            response.Value.CommitAccepted = userExtraData[0].SuccessfulSubmits;
+            response.Value.Permission = userPermission;
 
             #endregion
 
@@ -272,8 +259,29 @@ namespace Himu.Home.HttpApi.Controllers
                 MailActivationCodeTemplate.GetTemplate(user.UserName, verifyToken), useHtml: true);
 
             _logger.LogInformation(
-                "User {userName} : {userId} has been created, and the email has been sent",
+                "User {userName} : {friendId} has been created, and the email has been sent",
                 user.UserName, user.Id);
+            return Ok(response);
+        }
+
+        [HttpPost("confirmation")]
+        public async Task<ActionResult<HimuApiResponse>> ConfirmEmail(
+            VerifyEmailConfirmationRequest request
+        )
+        {
+            HimuApiResponse response = new();
+            HimuHomeUser? user = await _userManager.FindByNameAsync(request.UserName);
+            if (user == null || user.EmailConfirmed)
+            {
+                response.Failed($"{request.UserName} 已被激活");
+                return BadRequest(response);
+            }
+            var result = await _userManager.ConfirmEmailAsync(user, request.ConfirmationToken);
+            if (!result.Succeeded)
+            {
+                response.Failed(result.Errors.First().Description);
+                return BadRequest(response);
+            }
             return Ok(response);
         }
 
@@ -340,7 +348,7 @@ namespace Himu.Home.HttpApi.Controllers
             response.GetInfo(user, await _userJwtManager.GetAccessTokenAsync(user));
 
             _logger.LogDebug(
-                "User {userName}:{userId} logged in at {time}, token: {token}",
+                "User {userName}:{friendId} logged in at {time}, token: {token}",
                 user.UserName, user.Id, user.LastLoginDate, response.Value.AccessToken);
 
             return Ok(response);
@@ -441,8 +449,96 @@ namespace Himu.Home.HttpApi.Controllers
                     cc.ContestId, cc.Contest.Information.Title, cc.Contest.Information.Code))
                 .ToListAsync();
             authorizedContests.AddRange(contestsUserOwned);
-            
+
             response.Success(authorizedContests);
+            return Ok(response);
+        }
+
+        // TODO: add authorization
+        [HttpGet("{userId}/friend_sessions")]
+        public async Task<ActionResult<ChatSessionBriefResponse>> GetUserFriendSession(long userId)
+        {
+            ChatSessionBriefResponse response = new();
+            List<ChatSessionBriefValue> chatSessions = await _context.UserChatSessions
+                .AsNoTracking()
+                .Where(ucs => ucs.UserId == userId || ucs.FriendId == userId)
+                .Select(ucs => new ChatSessionBriefValue
+                {
+                    SessionId = ucs.Id,
+                    Name = (userId == ucs.UserId) ? ucs.Friend.UserName : ucs.User.UserName,
+                    SessionAvatarUrl = (userId == ucs.UserId) ? ucs.Friend.Avatar : ucs.User.Avatar
+                })
+                .ToListAsync();
+
+            foreach (var session in chatSessions)
+            {
+                string? lastMessage = await _context.ChatMessages
+                    .Where(cm => cm.SessionId == session.SessionId)
+                    .OrderByDescending(cm => cm.SendTime)
+                    .Select(cm => cm.Value)
+                    .FirstOrDefaultAsync();
+                if (lastMessage == null) session.LastMessage = "你们现在已经成为好友，可以发送消息了。";
+                else session.LastMessage = lastMessage;
+            }
+
+            response.Success(chatSessions);
+            return Ok(response);
+        }
+
+        [HttpPost("friend/{friendId}")]
+        [Authorize]
+        public async Task<ActionResult<HimuApiResponse>> RequestFriend(long friendId)
+        {
+            HimuApiResponse response = new();
+            HimuHomeUser? userToBeFriend = await _context.Users
+                .Where(u => u.Id == friendId)
+                .SingleOrDefaultAsync();
+            if (userToBeFriend == null)
+            {
+                response.Failed("No such user", HimuApiResponseCode.ResourceNotExist);
+                return BadRequest(response);
+            }
+
+            long thisUserId = long.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
+
+            if (thisUserId == friendId)
+            {
+                response.Failed("Cannot add yourself as friend");
+                return BadRequest(response);
+            }
+
+            bool alreadyFriend = await _context.UserFriends
+                .Where(uf => uf.UserId == thisUserId && uf.FriendId == friendId)
+                .AnyAsync();
+            if (alreadyFriend)
+            {
+                response.Failed("Already friend");
+                return BadRequest(response);
+            }
+
+            try
+            {
+                await _context.UserFriends.AddAsync(new UserFriend
+                {
+                    UserId = thisUserId,
+                    FriendId = friendId
+                });
+
+                // Each friend has a chat session
+                await _context.UserChatSessions.AddAsync(new UserChatSession
+                {
+                    UserId = thisUserId,
+                    FriendId = friendId,
+                });
+
+                await _context.SaveChangesAsync();
+            }
+            catch (Exception e)
+            {
+                _logger.LogError(e, "Error in POST api/users/{friendId}/friend", friendId);
+                response.Failed("Unexpected error(s) in POST api/users/{friendId}/friend");
+                return BadRequest(response);
+            }
             return Ok(response);
         }
 

@@ -3,6 +3,7 @@
 using Himu.Common.Service;
 using Himu.EntityFramework.Core;
 using Himu.EntityFramework.Core.Entity;
+using Himu.Home.HttpApi.Hubs;
 using Himu.HttpApi.Utility;
 using Himu.HttpApi.Utility.Authorization;
 using Himu.HttpApi.Utility.Utility;
@@ -204,17 +205,21 @@ try
 
     string[] urls = new string[]
     {
-        "http://localhost:5173"
+        "http://localhost:5173",
+        "http://localhost:3000",
     };
 
     builder.Services.AddCors(options => options.AddDefaultPolicy(
         policyBuilder => policyBuilder.WithOrigins(urls)
                                       .AllowAnyMethod()
                                       .AllowAnyHeader()
-                                      .AllowAnyMethod())
+                                      .AllowAnyMethod()
+                                      .AllowCredentials())
     );
 
     #endregion
+
+    builder.Services.AddSignalR();
 
     // Build 
 
@@ -232,6 +237,7 @@ try
     app.UseHttpsRedirection();
     app.UseImageSharp();
     app.UseStaticFiles();
+    app.MapHub<ChatHub>("/chat");
     // Serilog request & response
     app.UseSerilogRequestLogging();
     app.UseAuthentication();

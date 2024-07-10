@@ -65,7 +65,7 @@ const menuOptions: MenuOption[] = [
         icon: renderIcon(UserFriendIcon),
     },
     {
-        label: () => "发布问题",
+        label: () => "创建 & 发布",
         key: "creator-dashboard",
         icon: renderIcon(CreatorIcon),
     },
