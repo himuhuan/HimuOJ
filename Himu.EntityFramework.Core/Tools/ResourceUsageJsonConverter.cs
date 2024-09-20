@@ -1,6 +1,6 @@
-﻿using System.Text.Json;
+﻿using Himu.EntityFramework.Core.Entity.Components;
+using System.Text.Json;
 using System.Text.Json.Serialization;
-using Himu.EntityFramework.Core.Entity.Components;
 
 namespace Himu.EntityFramework.Core.Tools
 {
@@ -26,10 +26,12 @@ namespace Himu.EntityFramework.Core.Tools
                         case "memorybyteused":
                             memoryByteUsed = reader.GetInt64();
                             break;
+
                         case "timeused":
                             long timeMsUsed = reader.GetInt64();
                             span = TimeSpan.FromMilliseconds(timeMsUsed);
                             break;
+
                         default:
                             throw new JsonException();
                     }

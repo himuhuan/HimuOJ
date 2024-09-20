@@ -1,5 +1,4 @@
-﻿using Himu.EntityFramework.Core.Entity.Components;
-using Microsoft.AspNetCore.Identity;
+﻿using Microsoft.AspNetCore.Identity;
 
 namespace Himu.EntityFramework.Core.Entity
 {
@@ -13,12 +12,12 @@ namespace Himu.EntityFramework.Core.Entity
         public string Background { get; set; } = null!;
 
         //> Migration@2024-03-14 Add_HimuHomeUser_RegisterLoginDate
-        //> Add RegisterDate to HzimuHomeUser
-        public DateOnly RegisterDate { get; set;}
-        
+        //> Add RegisterDate to HimuHomeUser
+        public DateOnly RegisterDate { get; set; }
+
         //> Migration@2024-03-14 Add_HimuHomeUser_RegisterLoginDate:
         //> Add LastLoginDate to HimuHomeUser
-        public DateOnly LastLoginDate { get; set;}
+        public DateOnly LastLoginDate { get; set; }
 
         public virtual ICollection<HimuArticle>? Articles { get; set; }
 
@@ -33,5 +32,12 @@ namespace Himu.EntityFramework.Core.Entity
         /// refer to <see cref="ContestCreator"/>
         /// </summary>
         public virtual ICollection<HimuContest>? AccessibleContests { get; set; }
+
+        /* Added on Migration@2024-08-26 Add_UserCommitCaches */
+        #region User Caches
+        public long TotalCommitCount { get; set; }
+        public long AcceptedProblemCount { get; set; }
+        public long AcceptedCommitCount { get; set; }
+        #endregion
     }
 }

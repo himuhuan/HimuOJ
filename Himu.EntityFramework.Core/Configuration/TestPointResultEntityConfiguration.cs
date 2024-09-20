@@ -24,8 +24,6 @@ namespace Himu.EntityFramework.Core.Configuration
                      .HasConversion<TimespanMillisecondsConverter>();
             });
 
-            builder.OwnsOne(t => t.RunResult);
-
             builder.OwnsOne(t => t.Difference);
 
             builder.HasOne(t => t.TestPoint)

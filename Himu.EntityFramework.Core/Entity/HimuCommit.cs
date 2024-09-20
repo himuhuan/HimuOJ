@@ -3,7 +3,6 @@ using System.Text.Json.Serialization;
 
 namespace Himu.EntityFramework.Core.Entity
 {
-    
     public class HimuCommit
     {
         public long Id { get; set; }
@@ -20,7 +19,14 @@ namespace Himu.EntityFramework.Core.Entity
         [JsonConverter(typeof(JsonStringEnumConverter))]
         public ExecutionStatus Status { get; set; } = ExecutionStatus.PENDING;
 
-        public CompilerInfo CompilerInformation { get; set; } = null!;
+        public string CompilerName { get; set; } = string.Empty;
+
+        public string MessageFromCompiler { get; set; } = string.Empty;
+
+        /// <summary>
+        /// Compiler preset used to compile the source code
+        /// </summary>
+        public CompilerPreset CompilerPreset { get; set; } = null!;
 
         public long UserId { get; set; }
 
@@ -32,6 +38,6 @@ namespace Himu.EntityFramework.Core.Entity
         [JsonIgnore]
         public HimuProblem Problem { get; set; } = null!;
 
-        public IEnumerable<TestPointResult>? TestPointResults { get; set; }
+        public List<TestPointResult>? TestPointResults { get; set; }
     }
 }

@@ -11,8 +11,6 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Himu.EntityFramework.Core",
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Himu.Common.Service", "Himu.Common.Utility\Himu.Common.Service.csproj", "{E204A9E2-292E-4952-B41E-2327C3E6191E}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Himu.HttpApi.Utility", "Himu.Home.HttpApi.Utility\Himu.HttpApi.Utility.csproj", "{1697B76C-3A88-4CAA-9E79-5755F7FE7798}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -31,10 +29,6 @@ Global
 		{E204A9E2-292E-4952-B41E-2327C3E6191E}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{E204A9E2-292E-4952-B41E-2327C3E6191E}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{E204A9E2-292E-4952-B41E-2327C3E6191E}.Release|Any CPU.Build.0 = Release|Any CPU
-		{1697B76C-3A88-4CAA-9E79-5755F7FE7798}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{1697B76C-3A88-4CAA-9E79-5755F7FE7798}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{1697B76C-3A88-4CAA-9E79-5755F7FE7798}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{1697B76C-3A88-4CAA-9E79-5755F7FE7798}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -43,7 +37,6 @@ Global
 		{69E394EC-8911-44F4-B977-E3754D8BD8AC} = {C6D02B02-BDD2-4C43-A093-7470610CBAE2}
 		{804BD0C1-4738-476D-B746-299D236139B6} = {C6D02B02-BDD2-4C43-A093-7470610CBAE2}
 		{E204A9E2-292E-4952-B41E-2327C3E6191E} = {C6D02B02-BDD2-4C43-A093-7470610CBAE2}
-		{1697B76C-3A88-4CAA-9E79-5755F7FE7798} = {C6D02B02-BDD2-4C43-A093-7470610CBAE2}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {1781D03E-7DA3-4830-AA67-394970821369}

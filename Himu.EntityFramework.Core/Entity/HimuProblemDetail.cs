@@ -1,6 +1,6 @@
-﻿using System.Text.Json.Serialization;
-using Himu.EntityFramework.Core.Tools;
+﻿using Himu.EntityFramework.Core.Tools;
 using Microsoft.EntityFrameworkCore;
+using System.Text.Json.Serialization;
 
 namespace Himu.EntityFramework.Core.Entity
 {
@@ -14,7 +14,7 @@ namespace Himu.EntityFramework.Core.Entity
         public string Content { get; set; } = string.Empty;
 
         public long MaxMemoryLimitByte { get; set; } = 0;
-        
+
         [JsonConverter(typeof(TimeSpanMsJsonConverter))]
         public TimeSpan MaxExecuteTimeLimit { get; set; }
 

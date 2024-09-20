@@ -14,13 +14,13 @@ namespace Himu.EntityFramework.Core.Configuration
             builder.Property(x => x.Id)
                    .HasValueGenerator<SnowflakeIdGenerator>()
                    .ValueGeneratedOnAdd();
-            
+
             builder.OwnsOne(x => x.Detail, detail =>
             {
                 detail.HasIndex(t => t.Code);
                 detail.HasIndex(t => t.Title).HasPrefixLength(10);
                 detail.Property(t => t.MaxExecuteTimeLimit).HasConversion<long>();
-                
+
                 detail.Property(x => x.Code)
                       .HasMaxLength(HimuProblemLimit.MaxCodeLength);
                 detail.Property(x => x.Title)

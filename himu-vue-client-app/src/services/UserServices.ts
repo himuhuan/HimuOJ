@@ -89,15 +89,15 @@ export class UserServicesImpl {
         }
     }
 
-	async hasContestDistributorPermissionById(userId: string): Promise<boolean> {
-		const permission = await this.getUserRole(userId);
-		return (
-			permission === UserRole.Administrator ||
-			permission === UserRole.ContestDistributor
-		);
-	}
+    async hasContestDistributorPermissionById(userId: string): Promise<boolean> {
+        const permission = await this.getUserRole(userId);
+        return (
+            permission === UserRole.Administrator ||
+            permission === UserRole.ContestDistributor
+        );
+    }
 
-    hasContestDistributorPermission(permission: string) : boolean {
+    hasContestDistributorPermission(permission: string): boolean {
         return (
             permission === UserRole.Administrator ||
             permission === UserRole.ContestDistributor
@@ -112,6 +112,19 @@ export class UserServicesImpl {
             return resp.data.value as AuthorizedContestsList;
         } else {
             throw new Error("Failed to get user permission");
+        }
+    }
+
+    async updateUserDetail(userInfo: UserDetailInfo) {
+        const response = await AxiosDefaultInstance.put<HimuApiResult>(
+            `users/${userInfo.id}`,
+            userInfo
+        );
+        if (response.status !== 200) {
+            // Bad Request
+            if (response.status === 400)
+                window.$message.error(`更新用户资料失败：请检查您的输入格式.`);
+            throw new Error(`Failed to update user details: ${response.data.message}`);
         }
     }
 }

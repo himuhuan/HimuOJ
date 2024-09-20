@@ -1,9 +1,9 @@
-﻿using Himu.Common.Service;
-using Himu.EntityFramework.Core;
-using Himu.EntityFramework.Core.Entity;
-using Himu.HttpApi.Utility;
+﻿using Himu.EntityFramework.Core.Entity;
+using Himu.Home.HttpApi.Hubs;
+using Himu.Home.HttpApi.Services.Context;
+using Himu.Home.HttpApi.Services.Judge;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.SignalR;
 
 namespace Himu.Home.HttpApi.Controllers
 {
@@ -11,46 +11,28 @@ namespace Himu.Home.HttpApi.Controllers
     [ApiController]
     public class JudgeController : ControllerBase
     {
-        private readonly ILogger<JudgeController> _logger;
-        private readonly HimuMySqlContext _context;
-        private readonly IJudgeCoreService _judgeCoreService;
+        private readonly IOJContextService _oJContextService;
+        private readonly IHubContext<JudgeHub> _hub;
+        private readonly IJudgeTaskDispatcher _judgeTaskDispatcher;
 
-        public JudgeController(ILogger<JudgeController> logger,
-                               HimuMySqlContext context,
-                               IJudgeCoreService judgeCoreService)
+        public JudgeController(IOJContextService oJContextService, IHubContext<JudgeHub> hub, IJudgeTaskDispatcher judgeTaskDispatcher)
         {
-            _logger = logger;
-            _context = context;
-            _judgeCoreService = judgeCoreService;
+            _hub = hub;
+            _judgeTaskDispatcher = judgeTaskDispatcher;
+            _oJContextService = oJContextService;
         }
 
-        [HttpPost("{commitId:long}")]
-        public async Task<ActionResult<HimuApiResponse>> JudgeCommit(long commitId)
+        [HttpPost("{commitId}")]
+        public async Task<IActionResult> CommitJudgeTask(long commitId)
         {
-            HimuApiResponse response = new();
-            HimuCommit? commit = await _context.UserCommits
-                .Where(c => c.Id == commitId)
-                .SingleOrDefaultAsync();
-
-            if (commit == null)
-            {
-                response.Failed($"Illegal commit id: {commitId}");
-                return NotFound(commitId);
-            }
-            if (commit.Status != ExecutionStatus.PENDING)
-            {
-                response.Failed($"commit {commit.Id} already been tested");
-                return BadRequest(response);
-            }
-
-            int status = await _judgeCoreService.RequestJudgeCommitAsync(commitId);
-            if (status != 0)
-            {
-                response.Failed(
-                    $"judge core server responsed with status code: {status}");
-                return BadRequest(response);
-            }
-            return Ok(response);
+            HimuProblem? problem = null;
+            HimuCommit? commit = await _oJContextService.GetCommitForJudge(commitId);
+            if (commit != null)
+                problem = await _oJContextService.GetProblemWithTestPoint(commit.ProblemId);
+            if (commit == null || problem == null)
+                return BadRequest();
+            _ = _judgeTaskDispatcher.DispatchCommitTaskAsync(commit, problem, HttpContext.Connection.Id);
+            return Ok();
         }
     }
 }

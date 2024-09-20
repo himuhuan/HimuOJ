@@ -9,6 +9,6 @@
         public long CreatorId { get; set; }
 
         public HimuContest Contest { get; set; } = null!;
-        public HimuHomeUser Creator { get; set;} = null!;
+        public HimuHomeUser Creator { get; set; } = null!;
     }
 }

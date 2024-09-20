@@ -2,7 +2,7 @@
 	<center-content-container top-offset="5vh">
 		<n-card>
 			<n-space justify="center" align="center">
-				<img src="@/assets/images/himu-logo.svg" width="64" height="64" />
+				<img alt src="@/assets/images/himu-logo.svg" width="64" height="64" />
 				<div style="font-size: 16px">重置您的密码</div>
 			</n-space>
 			<n-card>
@@ -129,7 +129,7 @@ const resetPassword = async () => {
 }
 
 .slide-fade-leave-active {
-	transition: all 0.3s ease-in;
+	transition: all 0.3s ease-in; 
 }
 
 .slide-fade-enter-from,

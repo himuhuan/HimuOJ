@@ -3,7 +3,7 @@
     public enum PermissionOperation
     {
         Auditing,
-        Add, 
+        Add,
         Create,
         Remove
     }

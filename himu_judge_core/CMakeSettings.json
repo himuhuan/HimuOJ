@@ -12,7 +12,7 @@
       "ctestCommandArgs": "",
       "cmakeToolchain": "/home/himu/vcpkg/scripts/buildsystems/vcpkg.cmake",
       "inheritEnvironments": [ "linux_x64" ],
-      "wslPath": "${defaultWSLPath}"
+      "wslPath": "Ubuntu-22.04"
     },
     {
       "name": "WSL-GCC-Release",

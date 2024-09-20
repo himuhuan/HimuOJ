@@ -12,15 +12,6 @@ namespace Himu.EntityFramework.Core.Configuration
             builder.HasKey(c => c.Id);
             builder.Property(c => c.Id).ValueGeneratedNever();
 
-            builder.OwnsOne(c => c.CompilerInformation, info =>
-            {
-                info.HasIndex(i => i.CompilerName);
-                info.Property(i => i.CompilerName)
-                    .HasMaxLength(HimuCommitLimit.MaxCompilerNameLength);
-                info.Property(i => i.MessageFromCompiler)
-                    .HasMaxLength(HimuCommitLimit.MaxCompilerMessageLength);
-            });
-
             builder.Property(c => c.SourceUri)
                    .HasMaxLength(HimuCommitLimit.MaxSourceUriLength);
 
@@ -40,6 +31,11 @@ namespace Himu.EntityFramework.Core.Configuration
             builder.HasOne(c => c.User)
                    .WithMany(u => u.MyCommits)
                    .HasForeignKey(c => c.UserId)
+                   .IsRequired();
+
+            builder.HasOne(c => c.CompilerPreset)
+                   .WithMany()
+                   .HasForeignKey(c => c.CompilerName)
                    .IsRequired();
         }
     }

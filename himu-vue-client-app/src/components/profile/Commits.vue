@@ -3,14 +3,22 @@ import {
 	NCard,
 	NGrid,
 	NGridItem,
-	NStatistic,
 	NNumberAnimation,
 	NProgress,
+	NSkeleton,
+	NStatistic,
+	useLoadingBar,
 } from "naive-ui";
-import { PropType } from "vue";
+import { onMounted, PropType, reactive } from "vue";
 import { UserDetailInfo } from "@/models/User";
 import { Status } from "naive-ui/es/progress/src/interface";
+import { HimuCommitList } from "@/models/HimuCommitList.ts";
+import { CommitsServices } from "@/services/CommitsServices.ts";
+import CommitListFilter from "@/models/CommitListFilter.ts";
 import CommitList from "@/components/commits/CommitList.vue";
+import RealTimeConnection from "@/services/real_time/RealTimeConnection";
+
+const loadingBar = useLoadingBar();
 
 const props = defineProps({
 	userInfo: {
@@ -23,10 +31,61 @@ const commitAcceptedRate = function getCommitAcceptedRate() {
 	const rate = Math.ceil(
 		(props.userInfo.commitAccepted / props.userInfo.totalCommits) * 100
 	);
-	if (rate > 80) return { percentage: rate, status: "success" as Status };
-	if (rate > 60) return { percentage: rate, status: "warning" as Status };
-	return { percentage: rate, status: "error" as Status };
+	if (rate > 80) {
+		return {
+			percentage: rate,
+			status: "success" as Status,
+		};
+	}
+	if (rate > 60) {
+		return {
+			percentage: rate,
+			status: "warning" as Status,
+		};
+	}
+	return {
+		percentage: rate,
+		status: "error" as Status,
+	};
 };
+
+const defaultFilter: CommitListFilter = {
+	page: 1,
+	pageSize: 10,
+	userId: props.userInfo?.id,
+};
+
+const state = reactive({
+	userCommitListData: null as HimuCommitList | null,
+	loading: true,
+	filter: {
+		...defaultFilter,
+	} as CommitListFilter,
+});
+
+async function fetchCommitListData(filter: CommitListFilter) {
+	state.loading = true;
+	state.userCommitListData = await CommitsServices.filterCommitList(filter);
+	// for testing loading effect
+	// await new Promise((resolve) => setTimeout(resolve, 1000));
+	state.filter = { ...filter };
+	state.loading = false;
+}
+
+let realTimeConnection: RealTimeConnection | null = null;
+
+onMounted(async () => {
+	loadingBar.start();
+	try {
+		realTimeConnection = await RealTimeConnection.create();
+		await fetchCommitListData(state.filter);
+	} catch (e) {
+		console.error(e);
+		loadingBar.error()
+	} finally {
+		loadingBar.finish();
+	}
+});
 </script>
 
 <template>
@@ -77,7 +136,20 @@ const commitAcceptedRate = function getCommitAcceptedRate() {
 			</n-grid>
 		</n-card>
 		<n-card title="提交记录" style="margin-top: 5px">
-			<commit-list :user-id="userInfo.id.toString()" />
+			<transition name="slide-up" mode="out-in">
+				<div v-if="state.loading">
+					<n-skeleton :height="60" text :repeat="10" />
+				</div>
+				<div v-else>
+					<commit-list
+						:default-filter="defaultFilter"
+						:commit-list-data="state.userCommitListData"
+						:filter="state.filter"
+						:filter-enabled="true"
+						@updateData="fetchCommitListData"
+					/>
+				</div>
+			</transition>
 		</n-card>
 	</div>
 </template>

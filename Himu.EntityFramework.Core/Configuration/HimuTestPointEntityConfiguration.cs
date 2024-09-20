@@ -22,7 +22,7 @@ namespace Himu.EntityFramework.Core.Configuration
                    .HasMaxLength(HimuTestPointLimit.MaxExpectedLength);
             builder.Property(x => x.Input)
                    .HasMaxLength(HimuTestPointLimit.MaxInputLength);
-            
+
             builder.HasOne(tp => tp.Problem)
                    .WithMany(p => p.TestPoints)
                    .IsRequired();

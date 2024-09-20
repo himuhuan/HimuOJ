@@ -8,36 +8,45 @@
 	<div v-else-if="props.data.testStatus === ExecutionStatus.PENDING">
 		<n-text strong> 该测试点正在等待测试。</n-text>
 	</div>
+	<div v-else-if="props.data.testStatus === ExecutionStatus.SKIPPED">
+		<n-text strong>
+			由于之前的测试点没能通过测试，因此该测试点已被跳过。
+		</n-text>
+	</div>
 	<div v-else-if="props.data.testStatus === ExecutionStatus.RUNNING">
 		<n-text strong> 该测试点正在测试中。</n-text>
+	</div>
+	<div
+		v-else-if="props.data.testStatus === ExecutionStatus.TIME_LIMIT_EXCEEDED"
+	>
+		<n-text strong> 该测试点测试超时。</n-text>
+	</div>
+	<div
+		v-else-if="props.data.testStatus === ExecutionStatus.MEMORY_LIMIT_EXCEEDED"
+	>
+		<n-text strong> 该测试点测试超内存限制。</n-text>
 	</div>
 	<div v-else-if="props.data.testStatus === ExecutionStatus.WRONG_ANSWER">
 		<n-space vertical>
 			<n-text strong> 该测试点得到的结果与期望不符。</n-text>
-			<n-input-group>
-				<n-input-group-label>位于</n-input-group-label>
-				<n-input
-					readonly
-					:default-value="props.data.difference?.position.toString()"
-				></n-input>
-			</n-input-group>
-			<n-input-group>
-				<n-input-group-label>期望结果</n-input-group-label>
-				<n-input
-					readonly
-					:default-value="
-						truncateStringWith(props.data.difference?.expected, 50)
-					"
-				></n-input>
-			</n-input-group>
-			<n-input-group>
-				<n-input-group-label>实际结果</n-input-group-label>
-				<n-input
-					readonly
-					status="error"
-					:default-value="truncateStringWith(props.data.difference?.actual, 50)"
-				></n-input>
-			</n-input-group>
+			<n-descriptions
+				:columns="1"
+				bordered
+				label-placement="left"
+				:label-style="{ width: '100px' }"
+			>
+				<n-descriptions-item label="位于">
+					{{ props.data.difference?.position }}
+				</n-descriptions-item>
+				<n-descriptions-item label="期望结果">
+					{{ truncateStringWith(props.data.difference?.expected, 100) }}
+				</n-descriptions-item>
+				<n-descriptions-item label="实际结果">
+					<div style="color: red">
+						{{ truncateStringWith(props.data.difference?.actual, 100) }}
+					</div>
+				</n-descriptions-item>
+			</n-descriptions>
 		</n-space>
 	</div>
 	<n-hr />
@@ -77,6 +86,8 @@ import {
 	NInput,
 	NInputGroup,
 	NInputGroupLabel,
+	NDescriptionsItem,
+	NDescriptions,
 } from "naive-ui";
 import { TestPointServicesInstance } from "@/services/TestPointServices";
 import { truncateStringWith } from "@/utils/StringUtils";

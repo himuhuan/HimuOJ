@@ -1,12 +1,17 @@
-import { PointRunResult, CompilerInfo } from "./ResultModels";
-
+import { PointRunResult, CompilerInfo, ExecutionStatus } from "./ResultModels";
 
 export interface CommitDetail {
 	id: number;
 	sourceUri: string;
-	status: string;
+	commitDate: Date;
+	status: ExecutionStatus;
+	messageFromCompiler: string;
+	compilerPreset: {
+		language: string;
+		command: string;
+		name: string;
+	}
 	userId: number;
 	problemId: number;
-    compilerInformation: CompilerInfo;
 	testPointResults: PointRunResult[];
 }

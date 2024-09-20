@@ -1,14 +1,12 @@
 ﻿using Himu.EntityFramework.Core.Entity;
+using Himu.Home.HttpApi.Request;
+using Himu.Home.HttpApi.Response;
+using Himu.Home.HttpApi.Services.Context;
 using Himu.HttpApi.Utility.Request;
-using Himu.HttpApi.Utility;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Identity;
-using Himu.EntityFramework.Core;
-using Himu.EntityFramework.Core.Entity.Components;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Authorization.Infrastructure;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Build.Evaluation;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Mvc;
 
 namespace Himu.Home.HttpApi.Controllers
 {
@@ -18,23 +16,26 @@ namespace Himu.Home.HttpApi.Controllers
     {
         private readonly UserManager<HimuHomeUser> _userManager;
         private readonly RoleManager<HimuHomeRole> _roleManager;
-        private readonly HimuMySqlContext _context;
         private readonly IAuthorizationService _authorizationService;
+        private readonly IOJContextService _oJContextService;
+        private readonly IIdentityContextService _identityContextService;
 
         public AuthorizationController(
             UserManager<HimuHomeUser> userManager,
             RoleManager<HimuHomeRole> roleManager,
-            HimuMySqlContext context,
-            IAuthorizationService authorizationService)
+            IIdentityContextService identityContextService,
+            IAuthorizationService authorizationService,
+            IOJContextService oJContextService)
         {
             _userManager = userManager;
             _roleManager = roleManager;
-            _context = context;
+            _identityContextService = identityContextService;
             _authorizationService = authorizationService;
+            _oJContextService = oJContextService;
         }
 
         /// <summary>
-        /// Different from <see> AddUserRole </see>, 
+        /// Different from <see> AddUserRole </see>,
         /// this method is used for users to request higher permissions
         /// </summary>
         /// <remarks>
@@ -50,21 +51,14 @@ namespace Himu.Home.HttpApi.Controllers
             HimuApiResponse response = new();
             HimuHomeUser? user = await _userManager.FindByIdAsync(request.UserId.ToString());
             HimuHomeRole? role = await _roleManager.FindByNameAsync(request.Role);
+            
             if (user == null || role == null)
             {
                 response.Failed("BadRequest at AddUserRole");
                 return BadRequest(response);
             }
 
-            PermissionRecord record = new()
-            {
-                User = user,
-                Role = role,
-                Operation = PermissionOperation.Add,
-                Date = DateTime.Now
-            };
-            await _context.PermissionRecords.AddAsync(record);
-            await _context.SaveChangesAsync();
+            await _identityContextService.AddPermissionRecords(user, role);
 
             // TODO: Send a message to the administrator, instead of approving directly
             if (!await _userManager.IsInRoleAsync(user, role.Name))
@@ -81,9 +75,9 @@ namespace Himu.Home.HttpApi.Controllers
             [FromBody] CheckCurdPermissionRequest request
         )
         {
-            var checkPermissionMethod = GetCheckPermssionMethod(request.EntityType);
+            var checkPermissionMethod = GetCheckPermissionMethod(request.EntityType);
             AuthorizationResult? result = await checkPermissionMethod(request.EntityId, request.Operation);
-            
+
             if (result == null)
                 return NotFound();
             if (!result.Succeeded)
@@ -94,7 +88,7 @@ namespace Himu.Home.HttpApi.Controllers
         #region Private Methods & Members
 
         private Func<long, OperationAuthorizationRequirement, Task<AuthorizationResult?>>
-            GetCheckPermssionMethod(string entityType)
+            GetCheckPermissionMethod(string entityType)
         {
             return entityType switch
             {
@@ -106,14 +100,12 @@ namespace Himu.Home.HttpApi.Controllers
             };
         }
 
-        private async Task<AuthorizationResult?> CheckContestPermission(   
+        private async Task<AuthorizationResult?> CheckContestPermission(
             long contestId,
             OperationAuthorizationRequirement operation
         )
         {
-            HimuContest? contest = await _context.Contests.AsNoTracking()
-                                                          .Where(c => c.Id == contestId)
-                                                          .SingleOrDefaultAsync();
+            HimuContest? contest = await _oJContextService.GetContest(contestId);
             if (contest == null)
                 return null;
             return await _authorizationService.AuthorizeAsync(User, contest, operation);
@@ -124,13 +116,12 @@ namespace Himu.Home.HttpApi.Controllers
             OperationAuthorizationRequirement operation
         )
         {
-            HimuProblem? problem = await _context.ProblemSet.AsNoTracking()
-                                                            .Where(p => p.Id == problemId)
-                                                            .SingleOrDefaultAsync();
+            HimuProblem? problem = await _oJContextService.GetProblem(problemId);
             if (problem == null)
                 return null;
             return await _authorizationService.AuthorizeAsync(User, problem, operation);
         }
-        #endregion
+
+        #endregion Private Methods & Members
     }
 }

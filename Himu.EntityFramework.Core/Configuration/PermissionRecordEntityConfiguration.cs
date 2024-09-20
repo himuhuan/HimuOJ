@@ -19,7 +19,7 @@ namespace Himu.EntityFramework.Core.Configuration
 
             builder.Property(x => x.Operation)
                 .HasConversion(
-                    x => x.ToString(), 
+                    x => x.ToString(),
                     x => (PermissionOperation) System.Enum.Parse(typeof(PermissionOperation), x))
                 .HasMaxLength(16);
         }

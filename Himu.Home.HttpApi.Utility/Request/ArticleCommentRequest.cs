@@ -1,3 +1,0 @@
-﻿namespace Himu.HttpApi.Utility
-{
-}

@@ -91,7 +91,7 @@ namespace himu::launcher
 		}
 #if _DEBUG
 		MyLogger.trace(
-			"commit@{0} submited to problem@{1}(memory={2}B, time={3} ticks), starting running", commit->id,
+			"commit@{0} submitted to problem@{1}(memory={2}B, time={3} ticks), starting running", commit->id,
 			commit->problemId, problemLimit->maxMemoryLimitByte, problemLimit->maxExecuteTimeLimitTick);
 #endif
 		auto codeRunner = himu::createCodeRunner(*problemLimit);

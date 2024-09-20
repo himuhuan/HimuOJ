@@ -1,27 +1,36 @@
 <script setup lang="ts">
-import { NListItem, NSpace, NIcon } from "naive-ui";
-import { ArrowForwardIosRound as ArrowRightIcon } from "@vicons/material";
+import {NListItem, NSpace, NIcon} from "naive-ui";
+import {ArrowForwardIosRound as ArrowRightIcon} from "@vicons/material";
+import {useThemeVars} from "naive-ui";
+
+const themeVars = useThemeVars();
+
 </script>
 
 <template>
-	<n-list-item>
-		<n-space align="center" justify="space-between">
+    <n-list-item class="item-border">
+        <n-space align="center" justify="space-between">
 			<span class="info-list-item">
 				<slot name="icon"></slot>
 				&nbsp;
 				<slot></slot>
 			</span>
-			<n-icon size="small">
-				<arrow-right-icon />
-			</n-icon>
-		</n-space>
-	</n-list-item>
+            <n-icon size="small">
+                <arrow-right-icon/>
+            </n-icon>
+        </n-space>
+    </n-list-item>
 </template>
 
 <style scoped>
 .info-list-item {
-	padding: 5px 0;
-	display: flex;
-	align-items: center;
+    padding: 5px 0;
+    display: flex;
+    align-items: center;
 }
+
+.item-border {
+    border: 1px solid v-bind("themeVars.borderColor");
+}
+
 </style>

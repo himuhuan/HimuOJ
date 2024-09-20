@@ -1,7 +1,7 @@
 import { AxiosDefaultInstance } from "./AxiosInstance";
 import { HimuApiResultWithData } from "@/models/HimuApiResult";
 import { CommitDetail } from "@/models/CommitDetail";
-import { UserCommitList } from "@/models/UserCommitList";
+import { HimuCommitList } from "@/models/HimuCommitList.ts";
 import CommitListFilter from "@/models/CommitListFilter";
 
 export class CommitsServicesImpl {
@@ -9,11 +9,9 @@ export class CommitsServicesImpl {
 	 * api: user/{userId}/commits?page={page}&pageSize={pageSize} (filter)
 	 */
 	async filterCommitList(
-		page: number,
-		size: number,
-		filter?: CommitListFilter
-	): Promise<UserCommitList | null> {
-		let query = `commits?page=${page}&size=${size}`;
+		filter: CommitListFilter
+	): Promise<HimuCommitList> {
+		let query = `commits?page=${filter.page}&size=${filter.pageSize}`;
 		if (filter) {
 			if (filter.problemName)
 				query += `&problemName=${filter.problemName}`;
@@ -29,8 +27,8 @@ export class CommitsServicesImpl {
 				query += `&problemId=${filter.problemId}`;
 		}
 		const resp = await AxiosDefaultInstance.get<HimuApiResultWithData>(query);
-		if (resp.status === 200) return resp.data.value as UserCommitList;
-		else return null;
+		if (resp.status === 200) return resp.data.value as HimuCommitList;
+		else throw new Error("Failed to get commit list");
 	}
 
 	async getUserCommitListCount(userId: string): Promise<number> {
@@ -85,9 +83,9 @@ export class CommitsServicesImpl {
 		const resp = await AxiosDefaultInstance.post<HimuApiResultWithData>(
 			`commits/submit_code`,
 			{
-				problemId,
-				sourceCode,
-				language,
+				ProblemId: problemId,
+				SourceCode: sourceCode,
+				CompilerPresetName: language,
 			}
 		);
 		if (resp.status === 200) return resp.data.value as string;

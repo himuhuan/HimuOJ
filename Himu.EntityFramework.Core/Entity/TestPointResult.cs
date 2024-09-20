@@ -13,8 +13,6 @@ namespace Himu.EntityFramework.Core.Entity
         [JsonConverter(typeof(ResourceUsageJsonConverter))]
         public ResourceUsage? Usage { get; set; }
 
-        public ExitCodeWithMessage? RunResult { get; set; }
-
         public OutputDifference? Difference { get; set; }
 
         public long TestPointId { get; set; }

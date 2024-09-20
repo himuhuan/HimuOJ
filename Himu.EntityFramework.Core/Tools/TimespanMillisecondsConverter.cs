@@ -7,7 +7,6 @@ namespace Himu.EntityFramework.Core.Tools
         public TimespanMillisecondsConverter()
             : base(v => (long) v.TotalMilliseconds, v => TimeSpan.FromMilliseconds(v))
         {
-
         }
     }
 }

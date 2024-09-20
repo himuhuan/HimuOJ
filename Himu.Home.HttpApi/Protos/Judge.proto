@@ -1,0 +1,73 @@
+syntax = "proto3";
+
+package judge;
+
+option csharp_namespace = "GrpcJudgeClient";
+
+service JudgeService {
+	rpc Judge(JudgeTask) returns (JudgeResult);
+	rpc ProcessJudgeTask(stream JudgeTask) returns (stream JudgeResult);
+}
+
+enum JudgeStatus {
+	PENDING = 0;
+	RUNNING = 1;
+	ACCEPTED = 2;
+	WRONG_ANSWER = 3;
+	COMPILE_ERROR = 4;
+	TIME_LIMIT_EXCEEDED = 5;
+	RUNTIME_ERROR = 6;
+	MEMORY_LIMIT_EXCEEDED = 7;
+	SKIPPED = 8; // For test point that is skipped
+	INTERNAL_ERROR = 99;
+}
+
+message JudgeCompilerInfo {
+	string name = 1;
+	string command = 2;
+	// For C++/Rust, some compiler may take a long time to compile the code
+	int64 timeout = 3;
+}
+
+message JudgeResourceUsage {
+	// in milliseconds
+	int64 time = 1;
+	// in bytes
+	int64 memory = 2;
+}
+
+message JudgeTestPoint {
+	string input = 1;
+	string expected = 2;
+	int64 testPointId = 3;
+}
+
+message JudgeDifference {
+	int64 pos = 1;
+	string actual = 2;
+	string expected = 3;
+}
+
+message JudgeTestPointResult {
+	JudgeStatus status = 1;
+	string output = 2;
+	JudgeResourceUsage usage = 3;
+	JudgeDifference diff = 4;
+	int64 testPointId = 5;
+}
+
+message JudgeTask {
+	int64 commitId = 1;
+	string sourceUri = 2;
+	JudgeCompilerInfo compiler = 3;
+	JudgeResourceUsage limit = 4;
+	repeated JudgeTestPoint testPoints = 5;
+}
+
+message JudgeResult {
+	int64 commitId = 1;
+	JudgeStatus status = 2;
+	repeated JudgeTestPointResult testPointResults = 3;
+	// Only Used when status is COMPILE_ERROR, RUNTIME_ERROR. which contains the error message
+	string message = 4;
+}

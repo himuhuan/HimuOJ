@@ -144,6 +144,7 @@ import { MailOutline } from "@vicons/ionicons5";
 import router from "@/routers";
 import { useUserState } from "@/services/UserStateServices";
 import { AuthServices } from "@/services/AuthServices";
+import { usedVariables } from "@/utils/HimuTools";
 
 const themeVars = useThemeVars().value;
 
@@ -186,6 +187,7 @@ const rules: FormRules = {
 		password: {
 			required: true,
 			validator: (rule: FormItemRule, value: string) => {
+				usedVariables(rule);
 				if (!value) return new Error("请输入密码");
 				else if (
 					value.length < 8 ||

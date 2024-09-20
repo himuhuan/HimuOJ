@@ -1,5 +1,4 @@
-﻿using System.Diagnostics.CodeAnalysis;
-using System.Text.Json.Serialization;
+﻿using System.Text.Json.Serialization;
 
 namespace Himu.EntityFramework.Core.Entity
 {
@@ -14,6 +13,7 @@ namespace Himu.EntityFramework.Core.Entity
         TIME_LIMIT_EXCEEDED,         // TLE
         RUNTIME_ERROR,              // RE
         MEMORY_LIMIT_EXCEEDED,        // MLE
+        SKIPPED,                    // SKIPPED
         INTERNAL_ERROR              // ITE
     }
 }

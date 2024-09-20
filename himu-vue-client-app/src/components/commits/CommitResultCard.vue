@@ -1,55 +1,34 @@
 <template>
 	<n-card :title="`提交 #${props.commitDetail?.id}`" size="large">
 		<template #header-extra>
-			<n-tag
-				type="success"
-				size="large"
-				v-if="commitDetail?.status === ExecutionStatus.ACCEPTED"
-			>
-				已通过
-			</n-tag>
-			<n-tag
-				type="error"
-				size="large"
-				v-else-if="commitDetail?.status === ExecutionStatus.COMPILE_ERROR"
-			>
-				编译错误
-			</n-tag>
-			<n-tag
-				type="default"
-				size="large"
-				v-else-if="commitDetail?.status === ExecutionStatus.PENDING"
-			>
-				等待测试中
-			</n-tag>
-			<n-tag
-				type="error"
-				size="large"
-				v-else-if="commitDetail?.status === ExecutionStatus.WRONG_ANSWER"
-			>
-				结果错误
-			</n-tag>
-			<n-tag
-				type="error"
-				size="large"
-				v-else-if="commitDetail?.status === ExecutionStatus.RUNTIME_ERROR"
-			>
-				运行错误
-			</n-tag>
+			<status-tag :status="props.commitDetail?.status" />
 		</template>
-		<n-descriptions title="提交信息" label-placement="left">
+		<n-descriptions title="提交信息" label-placement="left" :column="1" bordered>
 			<n-descriptions-item label="提交编号">
 				<n-a :href="`/commits/${props.commitDetail?.id}`">{{
 					props.commitDetail?.id
 				}}</n-a>
 			</n-descriptions-item>
 			<n-descriptions-item label="提交用户">
-				<n-a :href="`/user/${props.commitDetail?.userId}/profile`" style="text-decoration: none">
+				<n-a
+					:href="`/user/${props.commitDetail?.userId}/profile`"
+					style="text-decoration: none"
+				>
 					<n-space align="center">
 						<n-avatar size="small" circle :src="userBrief?.avatarUri" />
 						<n-text>{{ userBrief?.userName }}</n-text>
 					</n-space>
 				</n-a>
+			</n-descriptions-item>
+			<n-descriptions-item label="提交时间">
+				{{ props.commitDetail?.commitDate }}
+			</n-descriptions-item>
+			<n-descriptions-item label="编译信息">
+				<n-code>
+				{{ props.commitDetail?.compilerPreset.language }} ({{
+					props.commitDetail?.compilerPreset.command
+				}})
+				</n-code>
 			</n-descriptions-item>
 		</n-descriptions>
 		<n-hr />
@@ -74,7 +53,7 @@
 				<n-card embedded title="编译错误">
 					<n-text type="error">
 						<pre class="pre-wrapper"
-							>{{ commitDetail?.compilerInformation.messageFromCompiler }} </pre
+							>{{ commitDetail?.messageFromCompiler }} </pre
 						>
 					</n-text>
 				</n-card>
@@ -93,11 +72,11 @@
 						size="small"
 						style="margin-top: 5px"
 						:class="{
-							'error-result': commitDetail?.status !== ExecutionStatus.ACCEPTED,
-							'success-result':
-								commitDetail?.status === ExecutionStatus.ACCEPTED,
-							'pending-result':
-								commitDetail?.status === ExecutionStatus.PENDING,
+							'other-result':
+								result?.testStatus === ExecutionStatus.PENDING ||
+								result?.testStatus === ExecutionStatus.SKIPPED,
+							'success-result': result?.testStatus === ExecutionStatus.ACCEPTED,
+							'error-result': result?.testStatus !== ExecutionStatus.ACCEPTED,
 						}"
 					>
 						<n-collapse-item :title="'测试 #' + index">
@@ -132,7 +111,7 @@
 <script setup lang="ts">
 import { CommitDetail } from "@/models/CommitDetail.ts";
 import { ExecutionStatus } from "@/models/ResultModels.ts";
-import { PropType, ref, onMounted } from "vue";
+import { PropType, ref, onMounted, onActivated } from "vue";
 import {
 	NTag,
 	NText,
@@ -171,7 +150,15 @@ const problemDetail = ref<ProblemDetail | null>(null);
 
 const themeVars = useThemeVars();
 
+const customThemeVars = {
+	errorCardColor: themeVars.value.errorColor + "10",
+	successCardColor: themeVars.value.successColor + "10",
+	otherCardColor: themeVars.value.warningColor + "10",
+};
+
+
 onMounted(async () => {
+	console.log(themeVars);
 	sourceCode.value = await StaticFileServicesInstance.getRawTextContent(
 		props.commitDetail?.sourceUri
 	);
@@ -194,17 +181,17 @@ onMounted(async () => {
 }
 
 .error-result {
-	background-color: #fae7e7;
+	background-color: v-bind("customThemeVars.errorCardColor");
 	border: 1px solid v-bind("themeVars.borderColor");
 }
 
 .success-result {
-	background-color: #e8f6f03f;
+	background-color: v-bind("customThemeVars.successCardColor");
 	border: 1px solid v-bind("themeVars.borderColor");
 }
 
-.pending-result {
-	background-color: #f5f5f5;
+.other-result {
+	background-color: v-bind("customThemeVars.otherCardColor");
 	border: 1px solid v-bind("themeVars.borderColor");
 }
 </style>

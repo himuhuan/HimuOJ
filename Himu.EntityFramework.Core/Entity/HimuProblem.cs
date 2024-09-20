@@ -2,7 +2,6 @@
 
 namespace Himu.EntityFramework.Core.Entity
 {
-    
     public class HimuProblem
     {
         public long Id;

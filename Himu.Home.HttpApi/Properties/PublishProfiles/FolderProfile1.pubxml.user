@@ -5,7 +5,7 @@ https://go.microsoft.com/fwlink/?LinkID=208121.
 <Project>
   <PropertyGroup>
     <TimeStampOfAssociatedLegacyPublishXmlFile />
-    <_PublishTargetUrl>E:\Code\Himu\Himu.Home.HttpApi\bin\Release\net6.0\publish\</_PublishTargetUrl>
+    <_PublishTargetUrl>bin\Release\net6.0\publish\</_PublishTargetUrl>
     <History>False|2023-12-13T07:22:35.4899961Z;</History>
     <LastFailureDetails />
   </PropertyGroup>
@@ -18,5 +18,10 @@ https://go.microsoft.com/fwlink/?LinkID=208121.
     <EFMigrations Include="Himu.EntityFramework.Core.HimuMySqlContext">
       <Value>server=localhost%3buid=root%3bpwd=liuhuan123%3bdatabase=himuoj%3bCharacter Set=utf8%3bpersist security info=True</Value>
     </EFMigrations>
+  </ItemGroup>
+  <ItemGroup>
+    <File Include="Services/Context/OJContextService.cs">
+      <publishTime>08/14/2024 11:26:48</publishTime>
+    </File>
   </ItemGroup>
 </Project>

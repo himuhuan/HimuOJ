@@ -48,16 +48,22 @@
 	>
 		时间超限
 	</n-tag>
-    <n-tag
-        size="large"
-        type="error"
-        v-else-if="props.status === ExecutionStatus.MEMORY_LIMIT_EXCEEDED"
-    >
-        内存超限
-    </n-tag>
-    <n-tag size="large" type="error" v-else>
-        {{ props.status }}
-    </n-tag>
+	<n-tag
+		size="large"
+		type="error"
+		v-else-if="props.status === ExecutionStatus.MEMORY_LIMIT_EXCEEDED"
+	>
+		内存超限
+	</n-tag>
+	<n-tag
+		size="large"
+		v-else-if="props.status === ExecutionStatus.SKIPPED"
+	>
+		已跳过
+	</n-tag>
+	<n-tag size="large" type="error" v-else>
+		{{ props.status }}
+	</n-tag>
 </template>
 
 <script setup lang="ts">

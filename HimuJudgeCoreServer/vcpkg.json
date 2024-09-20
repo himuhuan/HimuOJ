@@ -1,0 +1,9 @@
+{
+  "dependencies": [
+    "fmt",
+    "grpc",
+    "protobuf",
+    "spdlog",
+    "rapidjson"
+  ]
+}

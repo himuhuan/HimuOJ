@@ -1,12 +1,14 @@
-﻿using Himu.EntityFramework.Core;
+﻿using Himu.EntityFramework.Core.Contests;
 using Himu.EntityFramework.Core.Entity;
-using Himu.HttpApi.Utility;
+using Himu.EntityFramework.Core.Entity.Components;
+using Himu.Home.HttpApi.Response;
+using Himu.Home.HttpApi.Services.Authorization;
+using Himu.Home.HttpApi.Services.Context;
+using Himu.Home.HttpApi.Utils;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
-using Himu.EntityFramework.Core.Entity.Components;
-using Himu.HttpApi.Utility.Authorization;
 
 namespace Himu.Home.HttpApi.Controllers
 {
@@ -14,12 +16,16 @@ namespace Himu.Home.HttpApi.Controllers
     [ApiController]
     public class ContestController : ControllerBase
     {
-        private readonly HimuMySqlContext _context;
+        private readonly IOJContextService _oJContextService;
+        private readonly ILogger<ContestController> _logger;
         private readonly IAuthorizationService _authorizationService;
 
-        public ContestController(HimuMySqlContext context, IAuthorizationService authorizationService)
+        public ContestController(IOJContextService oJContextService,
+                                 ILogger<ContestController> logger,
+                                 IAuthorizationService authorizationService)
         {
-            _context = context;
+            _oJContextService = oJContextService;
+            _logger = logger;
             _authorizationService = authorizationService;
         }
 
@@ -28,17 +34,17 @@ namespace Himu.Home.HttpApi.Controllers
         public async Task<ActionResult<HimuApiResponse>>
             PostProblem(long contestId, HimuProblemDetail detail)
         {
-            long userId = long.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
             HimuApiResponse response = new();
+
             HimuProblem problemToPost = new()
             {
                 ContestId = contestId,
                 Detail = detail,
-                DistributorId = userId
+                DistributorId = long.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier))
             };
 
-            var authorizationResult 
-                = await _authorizationService.AuthorizeAsync(User, problemToPost, HimuCrudOperations.Create);
+            var authorizationResult =
+                await _authorizationService.AuthorizeAsync(User, problemToPost, HimuCrudOperations.Create);
             if (!authorizationResult.Succeeded)
             {
                 response.Failed("Authorization failed: Permission denied", HimuApiResponseCode.BadAuthorization);
@@ -47,16 +53,14 @@ namespace Himu.Home.HttpApi.Controllers
 
             try
             {
-                await _context.ProblemSet.AddAsync(problemToPost);
-                await _context.SaveChangesAsync();
+                await _oJContextService.AddProblem(problemToPost);
             }
-            catch (DbUpdateException e)
+            catch (Exception e)
             {
-                response.Failed(e.InnerException!.Message, HimuApiResponseCode.BadRequest);
-                return BadRequest(response);
+                response.Failed(e.Message, HimuApiResponseCode.DbOperationFailed);
             }
 
-            return Ok(response);
+            return response.ActionResult();
         }
 
         /// <summary>
@@ -83,7 +87,7 @@ namespace Himu.Home.HttpApi.Controllers
                 DistributorId = userId,
                 CreateDate = DateOnly.FromDateTime(DateTime.Now)
             };
-            
+
             var authorizationResult
                 = await _authorizationService.AuthorizeAsync(User, contestToCreate, HimuCrudOperations.Create);
             if (!authorizationResult.Succeeded)
@@ -94,8 +98,7 @@ namespace Himu.Home.HttpApi.Controllers
 
             try
             {
-                await _context.Contests.AddAsync(contestToCreate);
-                await _context.SaveChangesAsync();
+                await _oJContextService.AddContest(contestToCreate);
             }
             catch (DbUpdateException e)
             {
@@ -108,31 +111,30 @@ namespace Himu.Home.HttpApi.Controllers
 
         /// <summary>
         /// Get the contest id by contest code.
-        /// We agree that all apis that need to operate the contest must use the contest id.
-        /// </summary> 
+        /// We agree that all APIs that need to operate the contest must use the contest id.
+        /// </summary>
         [HttpGet("{contestCode}/id")]
         public async Task<ActionResult<HimuApiResponse<long>>>
             GetContestId(string contestCode)
         {
             HimuApiResponse<long> response = new();
-            long contestId = await _context.Contests
-                                           .AsNoTracking()
-                                           .Where(c => c.Information.Code == contestCode)
-                                           .Select(c => c.Id)
-                                           .SingleOrDefaultAsync();
+            long contestId = await _oJContextService.GetContestIdFromCode(contestCode);
+
             if (contestId == 0)
             {
                 response.Failed("not such contest");
-                return BadRequest(response);
+            }
+            else
+            {
+                response.Value = contestId;
             }
 
-            response.Value = contestId;
-            return Ok(response);
+            return response.ActionResult();
         }
 
         /// <summary>
-        /// Get the problem id by contest code and problem code.
-        /// We agree that all apis that need to operate the problem must use the problem id.
+        /// Get the problem id by contest code with problem code.
+        /// We agree that all APIs that need to operate the problem must use the problem id.
         /// </summary>
         [HttpGet("{contestCode}/problems/{problemCode}/id")]
         public async Task<ActionResult<HimuApiResponse<long>>> GetProblemId(
@@ -141,14 +143,8 @@ namespace Himu.Home.HttpApi.Controllers
         )
         {
             HimuApiResponse<long> response = new();
-            var problemId = await _context.ProblemSet
-                                          .Include(p => p.Contest)
-                                          .AsNoTracking()
-                                          .Where(p =>
-                                              p.Detail.Code == problemCode &&
-                                              p.Contest.Information.Code == contestCode)
-                                          .Select(p => p.Id)
-                                          .SingleOrDefaultAsync();
+            var problemId = await _oJContextService.GetProblemIdFromCode(contestCode, problemCode);
+
             if (problemId == 0)
             {
                 response.Failed($"contest {contestCode} do not have {problemCode}",
@@ -168,10 +164,8 @@ namespace Himu.Home.HttpApi.Controllers
             CheckProblemCode(long contestId, string problemCode)
         {
             HimuApiResponse response = new();
-            bool exist = await _context.ProblemSet
-                                       .Where(p =>
-                                           p.ContestId == contestId && p.Detail.Code == problemCode)
-                                       .AnyAsync();
+            bool exist = await _oJContextService.IsProblemExists(contestId, problemCode);
+
             if (exist)
             {
                 response.Failed("duplicate problem code", HimuApiResponseCode.DuplicateItem);

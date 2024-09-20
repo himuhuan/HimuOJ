@@ -20,7 +20,6 @@
 
 	<ItemGroup>
 		<ProjectReference Include="..\Himu.EntityFramework.Core\Himu.EntityFramework.Core.csproj" />
-		<ProjectReference Include="..\Himu.Home.HttpApi.Utility\Himu.HttpApi.Utility.csproj" />
 	</ItemGroup>
 
 </Project>

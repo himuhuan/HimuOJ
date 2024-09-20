@@ -6,6 +6,7 @@ export default class CommitListInfo {
 	sourceUri: string;
 	commitStatus: string;
 	compilerName: string;
+	commitDate: Date;
 
 	constructor(
 		commitId: number,
@@ -14,7 +15,8 @@ export default class CommitListInfo {
 		problemName: string,
 		sourceUri: string,
 		commitStatus: string,
-		compilerName: string
+		compilerName: string,
+		commitDate: string,
 	) {
 		this.commitId = commitId;
 		this.userId = userId;
@@ -23,6 +25,7 @@ export default class CommitListInfo {
 		this.sourceUri = sourceUri;
 		this.commitStatus = commitStatus;
 		this.compilerName = compilerName;
+		this.commitDate = new Date(commitDate);
 	}
 
     static fromJson(json: any): CommitListInfo {
@@ -33,7 +36,8 @@ export default class CommitListInfo {
 			json.problemName,
             json.sourceUri,
             json.commitStatus,
-            json.compilerName
+            json.compilerName,
+			json.commitDate,
         );
     }
 }
